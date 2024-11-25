@@ -1,9 +1,9 @@
 import pygame
 import settings
 import random
-from draw import draw_grid, draw_ants
+from draw import draw_grid, draw_ants, update_pheromones
 from ant import Ant
-from grid import initialize_food, initialize_nest
+from grid import grid, initialize_food, initialize_nest
 
 SCREEN_WIDTH = settings.SCREEN_WIDTH
 SCREEN_HEIGHT = settings.SCREEN_HEIGHT
@@ -39,6 +39,10 @@ while running:
 
     for ant in ants:
         ant.move()
+        ant.deposit_pheromone(grid)
+        ant.change_state(grid)
+
+    update_pheromones()
 
     draw_grid(screen)
     draw_ants(screen, ants)
@@ -46,6 +50,6 @@ while running:
     # flip() the display to put your work on screen
     pygame.display.flip()
 
-    clock.tick(4)  # limits FPS to 60
+    clock.tick(10)  # limits FPS to 60
 
 pygame.quit()

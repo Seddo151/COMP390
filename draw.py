@@ -16,11 +16,18 @@ def draw_grid(screen):
                  color = "green"
             elif cell["nest"] > 0  :
                  color = "brown" 
+            elif cell["pheromone"] > 0:
+                 color = (255,255 - cell["pheromone"],255)
             else:
-                 color = (200, 200, 200)
-            pygame.draw.rect(screen, color, rect, 1)
-
-
+                 color = (255, 255, 255)
+            pygame.draw.rect(screen, color, rect, 100) # use 100 to fill grid squares
+            
 def draw_ants(screen, ants):
         for ant in ants:
             pygame.draw.circle(screen, (0, 0, 0), (ant.x * GRID_SIZE + GRID_SIZE // 2, ant.y * GRID_SIZE + GRID_SIZE // 2), GRID_SIZE // 3)
+
+def update_pheromones():
+    for row in grid:
+        for cell in row:
+            cell["pheromone"] = max(0, cell["pheromone"] - settings.DECAY_RATE)
+
