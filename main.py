@@ -21,8 +21,8 @@ initialize_food()
 initialize_nest()
 
 # Initialize a list of ants
-ants = [Ant(random.randint(0, settings.SCREEN_WIDTH // settings.GRID_SIZE - 1),
-            random.randint(0, settings.SCREEN_HEIGHT // settings.GRID_SIZE - 1))
+ants = [Ant(10,
+            10)
         for _ in range(ANT_NUMBER)]
 
 
@@ -50,6 +50,6 @@ while running:
     # flip() the display to put your work on screen
     pygame.display.flip()
 
-    clock.tick(10)  # limits FPS to 60
+    clock.tick(settings.ANT_SPEED)  # limits FPS to 60
 
 pygame.quit()

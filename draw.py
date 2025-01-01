@@ -29,5 +29,6 @@ def draw_ants(screen, ants):
 def update_pheromones():
     for row in grid:
         for cell in row:
-            cell["pheromone"] = max(0, cell["pheromone"] - settings.DECAY_RATE)
+            if cell.get("nest",0):
+               cell["pheromone"] = max(0, cell["pheromone"] - settings.DECAY_RATE)
 
