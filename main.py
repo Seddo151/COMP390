@@ -21,12 +21,9 @@ initialize_food()
 initialize_nest()
 
 # Initialize a list of ants
-ants = [Ant(10,
-            10)
+ants = [Ant(70,
+            70)
         for _ in range(ANT_NUMBER)]
-
-
-
 
 while running:
     

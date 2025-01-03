@@ -9,22 +9,27 @@ class Ant:
         self.y = y
         self.state = "foraging"  # Possible states: "foraging" or "returning"
         self.visited_positions = []  # Memory of recently visited positions
+        self.path_stack = []  # Stack to remember the path
+        self.last_direction = (0, 0)
 
     def move(self):
         current_position = (self.x, self.y)
-         # If foraging, follow pheromones or explore randomly
+        
         if self.state == "foraging":
             self.follow_pheromones()
         elif self.state == "returning":
-            # When returning, follow pheromones back to the nest
-            self.follow_pheromones(inverse=True)
+            self.retrace_path()
 
+        
         self.x = max(0, min(self.x, settings.SCREEN_WIDTH // settings.GRID_SIZE - 1))
         self.y = max(0, min(self.y, settings.SCREEN_HEIGHT // settings.GRID_SIZE - 1))
 
-        self.previous_position = current_position
+         # Update visited positions
+        self.visited_positions.append(current_position)
+        if len(self.visited_positions) > 10:  # Limit memory to 10 positions
+            self.visited_positions.pop(0)
 
-    def follow_pheromones(self, inverse=False):
+    def follow_pheromones(self):
     
         directions = [
         (0, 1),   # Down
@@ -38,7 +43,7 @@ class Ant:
     ]
         best_direction = None
         best_pheromone = -1 
-        pheromone_threshold = 40 if self.state == "foraging" else 0 # Theshold for faint trails
+        
 
         cols = (settings.SCREEN_WIDTH // settings.GRID_SIZE) - 1
         rows = (settings.SCREEN_HEIGHT // settings.GRID_SIZE) -1
@@ -50,34 +55,52 @@ class Ant:
             if 0 <= nx < cols and 0 <= ny < rows:
                 if (nx, ny) in self.visited_positions:
                     continue  # Skip the previous position
-                pheromone_level = grid[ny][nx]["pheromone"]
-                if pheromone_level > best_pheromone and pheromone_level  > pheromone_threshold: # ignores low lvl pheromoens
+                pheromone_level = grid[ny][nx]["pheromone_food"] 
+                if pheromone_level > best_pheromone :
                     best_pheromone = pheromone_level
                     best_direction = (dx, dy)
 
-        # Move toward the best pheromone trail, or random if no pheromone detected
-        if best_direction and best_pheromone > 0 and random.random() > 0.01:
-            dx, dy = best_direction
-            
+       
+
+        # Momentum Bias: Favor last direction if no strong pheromones are present
+        if best_direction is None or best_pheromone <= 5:  # Low pheromone threshold
+            if self.last_direction in directions and random.random() > 0.05:  # 80% chance to continue
+                dx, dy = self.last_direction
+            else:
+                dx, dy = random.choice(directions)  # Explore randomly
         else:
-            # Random exploration if no pheromones are nearby
-            dx, dy = random.choice(directions)
-            
-
-         # Update visited positions
-        self.visited_positions.append((self.x, self.y))
-        if len(self.visited_positions) > 50:  # Limit memory to 10 positions
-            self.visited_positions.pop(0)
-
+            dx, dy = best_direction
+   
+        self.path_stack.append((self.x, self.y)) 
+        self.last_direction = (dx, dy)
         self.x += dx
         self.y += dy
 
-    def deposit_pheromone(self,grid):
-        if self.state == "returning" and grid[self.y][self.x]["pheromone"] < 155 :
-            grid[self.y][self.x]["pheromone"] += 15
-        elif grid[self.y][self.x]["pheromone"] < 235 and grid[self.y][self.x]["pheromone"] < 10:
-            grid[self.y][self.x]["pheromone"] += 0.5
+    def retrace_path(self):
+        if self.path_stack:
+            # Pop the last position from the stack and move there
+            self.x, self.y = self.path_stack.pop()
+        else:
+            # Fallback to random movement
+            directions = [
+                (0, 1), (1, 0), (0, -1), (-1, 0),
+                (1, 1), (1, -1), (-1, 1), (-1, -1)
+            ]
+            dx, dy = random.choice(directions)
+            self.x += dx
+            self.y += dy
 
+    def deposit_pheromone(self,grid):
+        
+        if self.state == "returning" and grid[self.y][self.x]["pheromone_food"] < 200 :
+            grid[self.y][self.x]["pheromone_food"] += 15
+        elif self.state == "foraging" and  grid[self.y][self.x]["pheromone_home"] < 200 :
+            if grid[self.y][self.x]["pheromone_food"] > 5:
+                grid[self.y][self.x]["pheromone_home"] += 10
+            elif grid[self.y][self.x]["pheromone_food"] < 5 :
+                grid[self.y][self.x]["pheromone_home"] += 5
+
+    
     def change_state(self,grid):
         
         if grid[self.y][self.x]["food"] > 0 and self.state == "foraging" :
@@ -86,7 +109,8 @@ class Ant:
         elif grid[self.y][self.x]["nest"] > 0 and self.state == "returning" :
             self.state = "foraging"
             self.visited_positions = [] # Reset visited positions so it can go back on itself
-    
-    
+            self.path_stack = []
+
+   
 
     

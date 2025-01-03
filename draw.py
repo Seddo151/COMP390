@@ -16,8 +16,10 @@ def draw_grid(screen):
                  color = "green"
             elif cell["nest"] > 0  :
                  color = "brown" 
-            elif cell["pheromone"] > 0:
-                 color = (255,255 - cell["pheromone"],255)
+            elif cell["pheromone_food"] > 0:
+                 color = (255,255 - cell["pheromone_food"],255)
+            elif cell["pheromone_home"] > 0:
+                 color = (255 - cell["pheromone_home"],255,255)
             else:
                  color = (255, 255, 255)
             pygame.draw.rect(screen, color, rect, 100) # use 100 to fill grid squares
@@ -27,8 +29,11 @@ def draw_ants(screen, ants):
             pygame.draw.circle(screen, (0, 0, 0), (ant.x * GRID_SIZE + GRID_SIZE // 2, ant.y * GRID_SIZE + GRID_SIZE // 2), GRID_SIZE // 3)
 
 def update_pheromones():
-    for row in grid:
-        for cell in row:
-            if cell.get("nest",0):
-               cell["pheromone"] = max(0, cell["pheromone"] - settings.DECAY_RATE)
+        for row in grid:
+            for cell in row:
+                if cell["nest"] < 0 or cell["food"] < 0:
+                    cell["pheromone_food"] = max(0, cell["pheromone_food"] - settings.DECAY_RATE)
+                    cell["pheromone_home"] = max(0, cell["pheromone_home"] - settings.DECAY_RATE)
+
+
 
