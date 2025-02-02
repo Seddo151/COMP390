@@ -53,9 +53,7 @@ class Ant:
         
         best_score, best_direction = self.find_best(directions)
         # Introduce randomness to break loops
-        if random.random() < 0:  # 0% chance to move randomly
-            dx, dy = random.choice(directions)
-        elif best_direction and best_score  > 0 and random.random() > 0.05: # % chance to move randomly
+        if best_direction and best_score  > 0 and random.random() > 0.05: # % chance to move randomly
             dx, dy = best_direction
         else:
             if self.last_direction in directions and random.random() > 0.1:  # % chance to continue
@@ -82,6 +80,10 @@ class Ant:
             if not (0 <= nx <= Settings.GRID_COLUMNS and 0 <= ny <= Settings.GRID_ROWS):
                 continue
 
+            # skips directions blocked by obstacles
+            if grid[ny][nx]["obstacle"] == True:
+                continue
+
             if (nx, ny) in self.visited_positions:
                 continue  # Skip the previous position
             
@@ -105,13 +107,8 @@ class Ant:
         if self.has_food == True:
             grid[self.y][self.x]["pheromone"].deposit_food_pheromone(1)
             #grid[self.y][self.x]["pheromone"].set_last_reinforced()
-
-        elif self.has_food == False:
-            if grid[self.y][self.x]["pheromone"].pheromone_food > 5:
-                grid[self.y][self.x]["pheromone"].deposit_home_pheromone(4)
-
-            elif grid[self.y][self.x]["pheromone"].pheromone_food <= 5 and grid[self.y][self.x]["pheromone"].pheromone_home < 150 :
-                grid[self.y][self.x]["pheromone"].deposit_home_pheromone(1)
+        else:
+            grid[self.y][self.x]["pheromone"].deposit_home_pheromone(1)
 
     
     def change_state(self,grid):
@@ -121,7 +118,7 @@ class Ant:
             self.visited_positions = [] # Reset visited positions
             grid[self.y][self.x]["food"] -= 1 
 
-        elif grid[self.y][self.x]["nest"] > 0 and self.has_food == True:
+        elif grid[self.y][self.x]["nest"] == True and self.has_food == True:
             self.has_food = False
             self.visited_positions = [] # Reset visited positions
             self.food_collected_count += 1

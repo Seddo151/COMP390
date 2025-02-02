@@ -7,17 +7,19 @@ def draw_grid(screen):
         for col in range(len(grid[0])):
             cell = grid[row][col]
             rect = pygame.Rect(col * Settings.CELL_SIZE, row * Settings.CELL_SIZE, Settings.CELL_SIZE, Settings.CELL_SIZE)
-            if cell["food"] > 0  :
-                 color = "green"
-            elif cell["nest"] > 0  :
-                 color = "brown" 
+            if cell["obstacle"] == True:
+                 colour = "dimgrey"
+            elif cell["nest"] == True :
+                 colour = "brown" 
+            elif cell["food"] > 0  :
+                 colour = "green"
             elif cell["pheromone"].pheromone_food > 0:
-                 color = (255,255 - cell["pheromone"].pheromone_food,255)
+                 colour = (255,255 - cell["pheromone"].pheromone_food,255)
             elif cell["pheromone"].pheromone_home > 0:
-                 color = (255 - cell["pheromone"].pheromone_home,255,255)
+                 colour = (255 - cell["pheromone"].pheromone_home,255,255)
             else:
-                 color = (255, 255, 255)
-            pygame.draw.rect(screen, color, rect, 100) # use 100 to fill grid squares
+                 colour = (255, 255, 255)
+            pygame.draw.rect(screen, colour, rect, 100) # use 100 to fill grid squares
             
 def draw_ants(screen, ants):
         for ant in ants:

@@ -7,7 +7,7 @@ class Pheromone:
 
     def deposit_food_pheromone(self, amount):
         self.pheromone_food = min(255, self.pheromone_food + amount)
-        self.last_reinforced = 0
+        self.last_reinforced = 1
 
     def deposit_home_pheromone(self, amount):
         self.pheromone_home = min(255, self.pheromone_home + amount)
