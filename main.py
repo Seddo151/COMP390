@@ -5,17 +5,44 @@ from ant import Ant
 from grid import grid, initialize_nest, update_pheromones
 from gui import Button, TextBox
 
+ 
+def reset_simulation(ants):
+    reset_grid()
+    reset_ants(ants)
 
-def handle_event(button_play, button_pause, button_reset, button_obstacle, button_food, placing_food, placing_obstacle, mouse_dragging, paused):
+def reset_grid():
+    for row in grid:
+        for cell in row:
+            cell["food"] = 0
+            cell["obstacle"] = False
+            cell["pheromone"].pheromone_food = 0
+            cell["pheromone"].pheromone_home = 0
+    # Reinitialize the nest
+    initialize_nest()
+
+def reset_ants(ants):
+    for ant in ants:
+        ant.x = Settings.NEST_POS_X
+        ant.y = Settings.NEST_POS_Y
+        ant.has_food = False
+        ant.visited_positions = []
+        ant.last_direction = (0, 0)
+        ant.returning_timer = 0
+        ant.food_collected_count = 0
+
+
+def handle_event(gui_elements, placing_food, placing_obstacle, mouse_dragging, paused, ants):
     for event in pygame.event.get():
+
         if event.type == pygame.QUIT:
             return False, placing_food, placing_obstacle, mouse_dragging, paused
+        
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button pressed
             mouse_dragging = True
-            print("Mouse dragging started")
+            
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:  # Left mouse button released
             mouse_dragging = False
-            print("Mouse dragging ended")
+            
         if event.type == pygame.MOUSEMOTION and mouse_dragging:  # Mouse is being dragged
             # Get the mouse position
             mouse_x, mouse_y = event.pos
@@ -31,23 +58,27 @@ def handle_event(button_play, button_pause, button_reset, button_obstacle, butto
                 elif placing_obstacle:
                     grid[grid_y][grid_x]["obstacle"] = True
 
-        if button_play.is_clicked(event):
+        if gui_elements["button_reset"].is_clicked(event):
+            reset_simulation(ants)
+
+        if gui_elements["button_play"].is_clicked(event):
             paused = False
-            print("Button Clicked!")  # Action when button is clicked
-        if button_pause.is_clicked(event):
+            
+        if gui_elements["button_pause"].is_clicked(event):
             paused = True
-            print("Pause Button Clicked!")  
-        if button_reset.is_clicked(event):
+            
+        if gui_elements["button_reset"].is_clicked(event):
             print("Reset Button Clicked!")
         
-        if button_food.is_clicked(event):
+        if gui_elements["button_food"].is_clicked(event):
             placing_food = True
             placing_obstacle = False
-        if button_obstacle.is_clicked(event):
+
+        if gui_elements["button_obstacle"].is_clicked(event):
             placing_obstacle = True
             placing_food = False
 
-    return True, placing_food, placing_obstacle, mouse_dragging, paused
+    return True, placing_food, placing_obstacle, mouse_dragging, paused, ants
 
 
     
@@ -72,22 +103,22 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
-
     # Create GUI elements
-    button_play = Button("Play", (1320, 40), (100, 50))
-    button_pause = Button("Pause", (1490, 40), (100, 50))
-    button_reset = Button("Reset", (1650, 40), (100, 50))
-
-    button_food = Button("Food", (1320, 120), (100, 50))
-    button_obstacle = Button("Obstacle", (1490, 120), (100, 50))
-    button_nest = Button("Nest", (1650, 120), (100, 50))
-
-    text_box = TextBox((1000, 200), (200, 40))
+    gui_elements = {
+        "button_play": Button("Play", (1320, 40), (100, 50)),
+        "button_pause": Button("Pause", (1490, 40), (100, 50)),
+        "button_reset": Button("Reset", (1650, 40), (100, 50)),
+        "button_food": Button("Food", (1320, 120), (100, 50)),
+        "button_obstacle": Button("Obstacle", (1490, 120), (100, 50)),
+        "button_nest": Button("Nest", (1650, 120), (100, 50)),
+        "text_box": TextBox((1000, 200), (200, 40)),
+    }
 
     placing_food = True
     placing_obstacle = False
     mouse_dragging = False
     paused = False
+    reset = False
 
 
     initialize_nest()
@@ -98,32 +129,28 @@ def main():
     font = pygame.font.Font(None, 24)
  
     while running:
-        running, placing_food, placing_obstacle, mouse_dragging, paused = handle_event(button_play, button_pause, button_reset, button_obstacle, button_food, placing_food, placing_obstacle, mouse_dragging, paused)
+        running, placing_food, placing_obstacle, mouse_dragging, paused, ants = (
+            handle_event(gui_elements, placing_food, placing_obstacle, mouse_dragging, paused, ants)
+        )
+        
 
         screen.fill("White")
         
+        
+
         if not paused:
             food_collected_count = update_ants(ants)
             update_pheromones()
-        
         
        
         draw_grid(screen)
         draw_ants(screen, ants)
 
-        # Draw elements
+        # Draw elements of gui
         pygame.draw.rect(screen, (200, 200, 200) , pygame.Rect((1280, 0), (500, 920)))
         pygame.draw.rect(screen, (200, 200, 200) , pygame.Rect((0, 720), (1280, 200)))
-
-        button_play.draw(screen)
-        button_pause.draw(screen)
-        button_reset.draw(screen)
-
-        button_food.draw(screen)
-        button_obstacle.draw(screen)
-        button_nest.draw(screen)
-
-        text_box.draw(screen)
+        for element in gui_elements.values():
+            element.draw(screen)
 
         text = font.render(f"food collected: {food_collected_count}", True, (0, 0, 0))
         screen.blit(text, (10, 750))

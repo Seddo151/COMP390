@@ -50,16 +50,17 @@ class Ant:
             (-1, 1), # Down-right
               (-1, -1) # Down-left
         ]
-        
-        best_score, best_direction = self.find_best(directions)
+         
+       
+        best_score, best_direction, possible_directions = self.find_best(directions)
         # Introduce randomness to break loops
         if best_direction and best_score  > 0 and random.random() > 0.05: # % chance to move randomly
             dx, dy = best_direction
         else:
-            if self.last_direction in directions and random.random() > 0.1:  # % chance to continue
+            if self.last_direction in possible_directions and random.random() > 0.1:  # % chance to continue
                 dx, dy = self.last_direction
             else:
-                dx, dy = random.choice(directions)  # Explore randomly
+                dx, dy = random.choice(possible_directions)  # Explore randomly
 
 
         self.last_direction = (dx, dy)
@@ -70,6 +71,7 @@ class Ant:
     def find_best(self, directions):
         best_direction = None
         best_score = -float('inf')
+        possible_directions = []
         # Calculate the direction of the nest
         nest_dx, nest_dy = self.calculate_nest_direction()  
 
@@ -81,8 +83,10 @@ class Ant:
                 continue
 
             # skips directions blocked by obstacles
-            if grid[ny][nx]["obstacle"] == True:
+            if grid[ny][nx]["obstacle"]:
                 continue
+
+            possible_directions.append((dx, dy))
 
             if (nx, ny) in self.visited_positions:
                 continue  # Skip the previous position
@@ -92,14 +96,14 @@ class Ant:
             else grid[ny][nx]["pheromone"].pheromone_home
             )
             # Combine pheromone level with nest alignment for returning ants only
-            direction_alignment = (dx * nest_dx + dy * nest_dy) if self.has_food == True else 0
+            direction_alignment = (dx * nest_dx + dy * nest_dy) if self.has_food else 0
             score = pheromone_level + 0.5 * direction_alignment
 
             if score > best_score:
                 best_score = score
                 best_direction = (dx, dy)
         
-        return best_score , best_direction
+        return best_score , best_direction, possible_directions
 
    
     def deposit_pheromone(self,grid):
@@ -123,7 +127,7 @@ class Ant:
             self.visited_positions = [] # Reset visited positions
             self.food_collected_count += 1
             
-
+    
     def calculate_nest_direction(self):
         dx = Settings.NEST_POS_X - self.x
         dy = Settings.NEST_POS_Y - self.y

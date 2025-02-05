@@ -24,7 +24,3 @@ def draw_grid(screen):
 def draw_ants(screen, ants):
         for ant in ants:
             pygame.draw.circle(screen, (0, 0, 0), (ant.x * Settings.CELL_SIZE + Settings.CELL_SIZE // 2, ant.y * Settings.CELL_SIZE + Settings.CELL_SIZE // 2), Settings.CELL_SIZE // 3)
-
-
-
-
