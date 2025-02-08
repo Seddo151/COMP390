@@ -16,7 +16,8 @@ class Simulation:
         self.placing_food = True
         self.placing_obstacle = False
         self.placing_nest = False
-        self.mouse_dragging = False
+        self.mouse1_dragging = False
+        self.mouse3_dragging = False
         self.ants = [Ant(Settings.NEST_POS_X, Settings.NEST_POS_Y) for _ in range(Settings.TOTAL_ANTS)]
 
         self.clock = pygame.time.Clock()
@@ -67,14 +68,23 @@ class Simulation:
             if event.type == pygame.QUIT:
                 self.running = False
             
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button pressed
-                self.mouse_dragging = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left mouse button pressed
+                    self.mouse1_dragging = True
+                elif event.button == 3:
+                    self.mouse3_dragging = True
                 
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:  # Left mouse button released
-                self.mouse_dragging = False
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:  # Left mouse button pressed
+                    self.mouse1_dragging = False
+                elif event.button == 3:
+                    self.mouse3_dragging = False
                 
-            if event.type == pygame.MOUSEMOTION and self.mouse_dragging:
-                self.place_item(event.pos)
+            if event.type == pygame.MOUSEMOTION:
+                if self.mouse1_dragging:
+                    self.place_item(event.pos)
+                elif self.mouse3_dragging:
+                    self.delete_item(event.pos)
 
             if self.button_reset.is_clicked(event):
                 self.reset_simulation()
@@ -88,10 +98,17 @@ class Simulation:
             if self.button_food.is_clicked(event):
                 self.placing_food = True
                 self.placing_obstacle = False
+                self.placing_nest = False
 
             if self.button_obstacle.is_clicked(event):
                 self.placing_obstacle = True
                 self.placing_food = False
+                self.placing_nest = False
+            
+            if self.button_nest.is_clicked(event):
+                self.placing_nest = True
+                self.placing_food = False
+                self.placing_obstacle = False
     
     def place_item(self, pos):
         # Get the mouse position
@@ -105,9 +122,29 @@ class Simulation:
                 # Place food on the grid square
                 grid[grid_y][grid_x]["food"] += Settings.FOOD_NUM
                 grid[grid_y][grid_x]["pheromone"].deposit_food_pheromone(255)
-            elif  self.placing_obstacle:
+            if  self.placing_obstacle:
                 grid[grid_y][grid_x]["obstacle"] = True
+            if self.placing_nest:
+                grid[grid_y][grid_x]["nest"] = True
+                grid[grid_y][grid_x]["pheromone"].deposit_home_pheromone(255)
 
+    def delete_item(self, pos):
+        # Get the mouse position
+        mouse_x, mouse_y = pos
+        # Calculate the grid position
+        grid_x = mouse_x // self.settings.CELL_SIZE
+        grid_y = mouse_y // self.settings.CELL_SIZE
+
+        if 0 <= grid_x < len(grid[0]) and 0 <= grid_y < len(grid):
+            if  self.placing_food:
+                # Remove food on the grid square
+                grid[grid_y][grid_x]["food"] -= Settings.FOOD_NUM
+                grid[grid_y][grid_x]["pheromone"].clear_pheromone()
+            if  self.placing_obstacle:
+                grid[grid_y][grid_x]["obstacle"] = False
+            if self.placing_nest:
+                grid[grid_y][grid_x]["nest"] = False
+                grid[grid_y][grid_x]["pheromone"].clear_pheromone()
 
     def update_ants(self):
         food_collected_count = 0

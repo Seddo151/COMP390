@@ -12,6 +12,10 @@ class Pheromone:
     def deposit_home_pheromone(self, amount):
         self.pheromone_home = min(255, self.pheromone_home + amount)
 
+    def clear_pheromone(self):
+        self.pheromone_home = 0
+        self.pheromone_food = 0
+
     def decay(self):
         self.pheromone_food = max(0, self.pheromone_food - (self.decay_rate * self.last_reinforced))
         self.pheromone_home = max(0, self.pheromone_home - self.decay_rate)

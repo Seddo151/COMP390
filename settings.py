@@ -19,8 +19,6 @@ class Settings:
 
     FOOD_NUM = 1000 # food available on a placed food cell
 
+    ITEM_SIZE = 2
 
-
-    #to add
-
-        # obstacle layer around edge once obstacle avoidence has been implemented
+   
