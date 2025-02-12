@@ -4,47 +4,65 @@ import pygame
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
-BUTTON_COLOR = (70, 130, 180) 
-TEXT_COLOR = WHITE
+BLUE = (70, 130, 180) 
+TEXT_COLOR = BLACK
 
 class Button:
     def __init__(self, text, pos, size):
-        self.text = text
         self.rect = pygame.Rect(pos, size)
-        self.color = BUTTON_COLOR
+        self.color = BLUE
         self.font = pygame.font.Font(None, 24)
-        self.text_surf = self.font.render(text, True, TEXT_COLOR)
+        self.text = text
+        self.text_surface = self.font.render(text, True, TEXT_COLOR)
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect, border_radius=8)  # Rounded corners
-        text_rect = self.text_surf.get_rect(center=self.rect.center)
-        screen.blit(self.text_surf, text_rect)
+        pygame.draw.rect(screen, self.color, self.rect)
+        text_rect = self.text_surface.get_rect(center=self.rect.center)
+        screen.blit(self.text_surface, text_rect)
 
     def is_clicked(self, event):
         return event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos)
+    
+    def update_text(self, text):
+        self.text_surface = self.font.render(text, True, TEXT_COLOR)
 
 class TextBox:
-    def __init__(self, pos, size):
+    def __init__(self, pos, size,str_size, text):
         self.rect = pygame.Rect(pos, size)
-        self.color = WHITE
-        self.text = ""
-        self.font = pygame.font.Font(None, 36)
-        self.active = False
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            self.active = self.rect.collidepoint(event.pos)
-        if event.type == pygame.KEYDOWN and self.active:
-            if event.key == pygame.K_RETURN:
-                self.active = False
-                return self.text
-            elif event.key == pygame.K_BACKSPACE:
-                self.text = self.text[:-1]
-            else:
-                self.text += event.unicode
-        return None
+        self.color = WHITE  # Default color
+        self.font = pygame.font.Font(None, 24)
+        self.text = text  # The current text in the box
+        self.active = False  # Whether the text box is active (clicked)
+        self.rendered_text = self.font.render(self.text, True, TEXT_COLOR)  # Render the text
+        self.str_size = str_size
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect, 2 if self.active else 1)
-        text_surf = self.font.render(self.text, True, BLACK)
-        screen.blit(text_surf, (self.rect.x + 5, self.rect.y + 5))
+        # Draw the text box
+        pygame.draw.rect(screen, self.color, self.rect)
+        # Draw the text inside the box
+        text_surface = self.font.render(self.text, True, TEXT_COLOR)
+        # Adjust text position to avoid overflow
+        text_rect = text_surface.get_rect(midleft=(self.rect.x + 5, self.rect.centery))
+        screen.blit(text_surface, text_rect)
+
+    def is_clicked(self, event):
+        # Activate the text box if clicked
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                self.active = True
+                self.color = BLUE
+            else:
+                self.active = False
+                self.color = WHITE
+        return self.active
+
+    def handle_event(self, event):
+        # Handle text input when the text box is active
+        if self.active and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_BACKSPACE:  # Handle backspace
+                self.text = self.text[:-1]
+            else:  # Add the typed character to the text
+                if len(self.text) < self.str_size:
+                    self.text += event.unicode
+            # Re-render the text
+            self.rendered_text = self.font.render(self.text, True, TEXT_COLOR)

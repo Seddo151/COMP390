@@ -10,15 +10,14 @@ class Settings:
     GRID_ROWS = (SIM_HEIGHT // CELL_SIZE) -1 # num of rows in grid
     GRID_COLUMNS = (SIM_WIDTH // CELL_SIZE) - 1 # mum of columns in grid
 
-    TOTAL_ANTS = 1000
+    DEFAULT_NUM_ANTS = 1000
     ANT_MEMORY_SIZE = 40 # how many previous cells the ant wont re-visit
     PHEROMONE_DECAY_RATE = 0.01 # speed that pheromones decay
 
     NEST_POS_X = 70
     NEST_POS_Y = 70
 
-    FOOD_NUM = 1000 # food available on a placed food cell
+    FOOD_NUM = 100 # food available on a placed food cell
 
-    ITEM_SIZE = 2
-
+    
    

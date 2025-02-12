@@ -54,7 +54,9 @@ class Ant:
        
         best_score, best_direction, possible_directions = self.find_best(directions)
         # Introduce randomness to break loops
-        if best_direction and best_score  > 0 and random.random() > 0.05: # % chance to move randomly
+        if possible_directions == []:
+            dx, dy = (0,0)
+        elif best_direction and best_score  > 0 and random.random() > 0.05: # % chance to move randomly
             dx, dy = best_direction
         else:
             if self.last_direction in possible_directions and random.random() > 0.1:  # % chance to continue
