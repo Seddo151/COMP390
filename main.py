@@ -5,6 +5,7 @@ from draw import draw_grid, draw_ants
 from ant import Ant
 from grid import grid, initialize_nest, update_pheromones
 from gui import Button, TextBox
+from colony import Colony
 
 class Simulation:
     def __init__(self):
@@ -23,23 +24,25 @@ class Simulation:
         self.num_ants = Settings.DEFAULT_NUM_ANTS
         self.ants = [Ant(Settings.NEST_POS_X, Settings.NEST_POS_Y) for _ in range(self.num_ants)]
 
+        self.colonys = [Colony()]
+
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24)
         self.screen = pygame.display.set_mode((Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT))
         pygame.display.set_caption("Ant Colony Simulation")
 
         # Create GUI elements
-        self.button_pause = Button("Pause", (1320, 40), (100, 50))
-        self.button_reset = Button("Reset", (1650, 40), (100, 50))
+        self.button_pause = Button("Pause", (10, 750), (100, 50))
+        self.button_reset = Button("Reset", (10, 850), (100, 50))
 
-        self.button_food = Button("Food", (1320, 120), (100, 50))
-        self.button_obstacle = Button("Obstacle", (1490, 120), (100, 50))
-        self.button_nest = Button("Nest", (1650, 120), (100, 50))
+        self.button_food = Button("Food", (210, 750), (100, 50))
+        self.button_obstacle = Button("Obstacle", (410, 750), (100, 50))
+        self.button_nest = Button("Nest", (1650, 120), (50, 50))
 
-        self.text_box_ants = TextBox((1450, 240), (100, 40), 4, str(self.num_ants))
+        self.text_box_ants = TextBox((1450, 240), (50, 40), 4, str(self.num_ants))
         self.button_reset_ants = Button("Reset Ants", (1600, 240), (100, 50))
         
-        self.text_box_cursor = TextBox((1450, 330), (100, 40), 2, str(self.cursor_size))
+        self.text_box_cursor = TextBox((410, 850), (100, 40), 2, str(self.cursor_size))
 
         self.text_box_fps = TextBox((1450, 400), (100, 40), 3, str(Settings.FPS))
 
@@ -61,30 +64,16 @@ class Simulation:
         initialize_nest()
 
     def reset_ants(self):
-        # Find all cells that contain a nest
-        nest_cells = []
-        for y in range(len(grid)):
-            for x in range(len(grid[0])):
-                if grid[y][x]["nest"]:
-                    nest_cells.append((x, y))  # Store the coordinates of nest cells
-
-        # If there are no nest cells, use the default nest position
-        if not nest_cells:
-            self.ants = []
-            return
-
-        # Reset ants to random nest cells
-        self.ants = []
-        for _ in range(self.num_ants):
-            x, y = random.choice(nest_cells)  # Randomly select a nest cell
-            self.ants.append(Ant(x, y))  # Create an ant at the selected nest cell
+        
+        for col in self.colonys:
+            col.reset_ants()
 
         # Reset pheromones
         for row in grid:
             for cell in row:
                 if cell["nest"] == False or cell["food"] <= 0:
-                cell["pheromone"].pheromone_food = 0
-                cell["pheromone"].pheromone_home = 0
+                    cell["pheromone"].pheromone_food = 0
+                    cell["pheromone"].pheromone_home = 0
         
 
     def handle_event(self):
@@ -208,18 +197,6 @@ class Simulation:
                     grid[y][x]["nest"] = False
                     grid[y][x]["pheromone"].clear_pheromone()
 
-    def update_ants(self):
-        food_collected_count = 0
-
-        for ant in self.ants:
-            ant.move()
-            ant.deposit_pheromone(grid)
-            ant.change_state(grid)
-            food_collected_count += ant.food_collected_count
-
-        return food_collected_count
-
-
     def run(self):
         while self.running:
             self.handle_event()
@@ -227,11 +204,16 @@ class Simulation:
             self.screen.fill("White")
 
             if not self.paused:
-                food_collected_count = self.update_ants()
+                for col in self.colonys:
+                    col.update_ants()
                 update_pheromones()
 
             draw_grid(self.screen)
             draw_ants(self.screen, self.ants)
+
+            for col in self.colonys:
+                draw_ants(self.screen,col.ants)
+        
 
             # Draw elements of GUI
 
@@ -245,21 +227,25 @@ class Simulation:
             self.button_obstacle.draw(self.screen)
             self.button_nest.draw(self.screen)
 
-            text_ants = self.font.render(f"num of ants:", True, (0, 0, 0))
+            text_ants = self.font.render(f"ants:", True, (0, 0, 0))
             self.screen.blit(text_ants, (1320, 250))
             self.text_box_ants.draw(self.screen)
             
             text_cursor = self.font.render(f"cursor size:", True, (0, 0, 0))
-            self.screen.blit(text_cursor, (1320, 350))
+            self.screen.blit(text_cursor, (310, 860))
             self.text_box_cursor.draw(self.screen)
 
             text_fps = self.font.render(f"FPS:", True, (0, 0, 0))
             self.screen.blit(text_fps, (1320, 450))
             self.text_box_fps.draw(self.screen)
 
-            text_food = self.font.render(f"food collected: {food_collected_count}", True, (0, 0, 0))
-            self.screen.blit(text_food, (10, 750))
-            
+            text_food = self.font.render(f"food collected: 0", True, (0, 0, 0))
+            self.screen.blit(text_food, (1000, 750))
+
+            self.screen.blit(self.font.render(f"Colony 1", True, (0, 0, 0)), (1300, 20))
+            self.screen.blit(self.font.render(f"Colony 2", True, (0, 0, 0)), (1425, 20))
+            self.screen.blit(self.font.render(f"Colony 3", True, (0, 0, 0)), (1550, 20))
+            self.screen.blit(self.font.render(f"Colony 4", True, (0, 0, 0)), (1675, 20))        
 
             # flip() the display to put your work on screen
             pygame.display.flip() 

@@ -10,7 +10,7 @@ class Settings:
     GRID_ROWS = (SIM_HEIGHT // CELL_SIZE) -1 # num of rows in grid
     GRID_COLUMNS = (SIM_WIDTH // CELL_SIZE) - 1 # mum of columns in grid
 
-    DEFAULT_NUM_ANTS = 1000
+    DEFAULT_NUM_ANTS = 0
     ANT_MEMORY_SIZE = 40 # how many previous cells the ant wont re-visit
     PHEROMONE_DECAY_RATE = 0.01 # speed that pheromones decay
 
