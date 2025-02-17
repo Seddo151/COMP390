@@ -82,6 +82,7 @@ class Simulation:
         # Reset pheromones
         for row in grid:
             for cell in row:
+                if cell["nest"] == False or cell["food"] <= 0:
                 cell["pheromone"].pheromone_food = 0
                 cell["pheromone"].pheromone_home = 0
         
