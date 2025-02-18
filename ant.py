@@ -3,8 +3,8 @@ from settings import Settings
 from grid import grid
 
 class Ant:
-    def __init__(self, x, y):
-
+    def __init__(self, x, y, nest_location):
+        self.nest_location = nest_location
         self.x = x
         self.y = y
         self.has_food = False  # Possible states: "foraging" or "returning"
@@ -131,8 +131,9 @@ class Ant:
             
     
     def calculate_nest_direction(self):
-        dx = Settings.NEST_POS_X - self.x
-        dy = Settings.NEST_POS_Y - self.y
+        nest_x, nest_y = self.nest_location
+        dx = nest_x - self.x
+        dy = nest_y - self.y
         magnitude = max(1, (dx**2 + dy**2)**0.5)  # Avoid division by zero
         return dx / magnitude, dy / magnitude  # Unit vector toward the nest
 

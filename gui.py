@@ -4,7 +4,8 @@ import pygame
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
-BLUE = (70, 130, 180) 
+BLUE = (70, 130, 180)
+LIGHT_BLUE = (70, 130, 180)  
 TEXT_COLOR = BLACK
 
 class Button:
@@ -21,6 +22,7 @@ class Button:
         screen.blit(self.text_surface, text_rect)
 
     def is_clicked(self, event):
+        
         return event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos)
     
     def update_text(self, text):

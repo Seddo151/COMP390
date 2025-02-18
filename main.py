@@ -3,7 +3,7 @@ import random
 from settings import Settings
 from draw import draw_grid, draw_ants
 from ant import Ant
-from grid import grid, initialize_nest, update_pheromones
+from grid import grid, update_pheromones
 from gui import Button, TextBox
 from colony import Colony
 
@@ -21,8 +21,6 @@ class Simulation:
         self.placing_nest = False
         self.mouse1_dragging = False
         self.mouse3_dragging = False
-        self.num_ants = Settings.DEFAULT_NUM_ANTS
-        self.ants = [Ant(Settings.NEST_POS_X, Settings.NEST_POS_Y) for _ in range(self.num_ants)]
 
         self.colonys = [Colony()]
 
@@ -37,16 +35,15 @@ class Simulation:
 
         self.button_food = Button("Food", (210, 750), (100, 50))
         self.button_obstacle = Button("Obstacle", (410, 750), (100, 50))
-        self.button_nest = Button("Nest", (1650, 120), (50, 50))
+        self.button_nest = Button("Nest", (1300, 50), (50, 50))
 
-        self.text_box_ants = TextBox((1450, 240), (50, 40), 4, str(self.num_ants))
-        self.button_reset_ants = Button("Reset Ants", (1600, 240), (100, 50))
+        self.text_box_ants = TextBox((1300, 150), (50, 40), 4, str(self.colonys[0].num_ants))
+        self.button_reset_ants = Button("Reset Ants", (1150, 750), (100, 50))
         
         self.text_box_cursor = TextBox((410, 850), (100, 40), 2, str(self.cursor_size))
 
-        self.text_box_fps = TextBox((1450, 400), (100, 40), 3, str(Settings.FPS))
+        self.text_box_fps = TextBox((750, 850), (100, 40), 3, str(Settings.FPS))
 
-        initialize_nest()
 
 
     def reset_simulation(self):
@@ -60,8 +57,6 @@ class Simulation:
                 cell["obstacle"] = False
                 cell["nest"] = False
               
-        # Reinitialize the nest
-        initialize_nest()
 
     def reset_ants(self):
         
@@ -135,7 +130,7 @@ class Simulation:
             self.text_box_ants.is_clicked(event)  # Activate/deactivate text box
             self.text_box_ants.handle_event(event)  # Handle text input
             try:
-                    self.num_ants = int(self.text_box_ants.text)
+                    self.colonys[0].num_ants = int(self.text_box_ants.text)
             except ValueError:
                 pass  # Ignore invalid input (non-integer values)
 
@@ -168,8 +163,9 @@ class Simulation:
                 elif self.placing_obstacle:
                     grid[y][x]["obstacle"] = True
                 elif self.placing_nest:
-                    grid[y][x]["nest"] = True
-                    grid[y][x]["pheromone"].deposit_home_pheromone(255)
+                    # Ensure only one nest per colony
+                    for col in self.colonys:
+                        col.place_nest(x, y)
 
     def delete_item(self, pos):
         # Get the mouse position
@@ -209,7 +205,6 @@ class Simulation:
                 update_pheromones()
 
             draw_grid(self.screen)
-            draw_ants(self.screen, self.ants)
 
             for col in self.colonys:
                 draw_ants(self.screen,col.ants)
@@ -227,8 +222,8 @@ class Simulation:
             self.button_obstacle.draw(self.screen)
             self.button_nest.draw(self.screen)
 
-            text_ants = self.font.render(f"ants:", True, (0, 0, 0))
-            self.screen.blit(text_ants, (1320, 250))
+            text_ants = self.font.render(f"ants num:", True, (0, 0, 0))
+            self.screen.blit(text_ants, (1300, 130))
             self.text_box_ants.draw(self.screen)
             
             text_cursor = self.font.render(f"cursor size:", True, (0, 0, 0))
@@ -236,24 +231,25 @@ class Simulation:
             self.text_box_cursor.draw(self.screen)
 
             text_fps = self.font.render(f"FPS:", True, (0, 0, 0))
-            self.screen.blit(text_fps, (1320, 450))
+            self.screen.blit(text_fps, (700, 860))
             self.text_box_fps.draw(self.screen)
 
-            text_food = self.font.render(f"food collected: 0", True, (0, 0, 0))
-            self.screen.blit(text_food, (1000, 750))
+            text_food = self.font.render(f"food collected: {self.colonys[0].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 600))
 
             self.screen.blit(self.font.render(f"Colony 1", True, (0, 0, 0)), (1300, 20))
             self.screen.blit(self.font.render(f"Colony 2", True, (0, 0, 0)), (1425, 20))
             self.screen.blit(self.font.render(f"Colony 3", True, (0, 0, 0)), (1550, 20))
             self.screen.blit(self.font.render(f"Colony 4", True, (0, 0, 0)), (1675, 20))        
 
+            self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1300, 220))
+
+            
             # flip() the display to put your work on screen
             pygame.display.flip() 
             self.clock.tick(self.settings.FPS)  # sets FPS limit
         
         pygame.quit()
-
-
 
 
 if __name__ == "__main__":
