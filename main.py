@@ -55,7 +55,7 @@ class Simulation:
             for cell in row:
                 cell["food"] = 0
                 cell["obstacle"] = False
-                cell["nest"] = False
+                # cell["nest"] = False
               
 
     def reset_ants(self):
@@ -185,13 +185,47 @@ class Simulation:
             for y in range(start_y, end_y + 1):
                 if  self.placing_food:
                     # Remove food on the grid square
-                    grid[y][x]["food"] -= Settings.FOOD_NUM
+                    grid[y][x]["food"] -= self.settings.FOOD_NUM
                     grid[y][x]["pheromone"].clear_pheromone()
                 if  self.placing_obstacle:
                     grid[y][x]["obstacle"] = False
                 if self.placing_nest:
                     grid[y][x]["nest"] = False
                     grid[y][x]["pheromone"].clear_pheromone()
+
+
+    def draw_gui(self):
+        # Draw elements of GUI
+
+            pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((1280, 0), (500, 920)))
+            pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((0, 720), (1280, 200)))
+
+            self.button_pause.draw(self.screen)
+            self.button_reset_ants.draw(self.screen)
+            self.button_reset.draw(self.screen)
+            self.button_food.draw(self.screen)
+            self.button_obstacle.draw(self.screen)
+            self.button_nest.draw(self.screen)
+
+            self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1300, 130))
+            self.text_box_ants.draw(self.screen)
+            
+            self.screen.blit(self.font.render(f"cursor size:", True, (0, 0, 0)), (310, 860))
+            self.text_box_cursor.draw(self.screen)
+
+            self.screen.blit(self.font.render(f"FPS:", True, (0, 0, 0)), (700, 860))
+            self.text_box_fps.draw(self.screen)
+
+            text_food = self.font.render(f"food collected: {self.colonys[0].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 600))
+
+            self.screen.blit(self.font.render(f"Colony 1", True, (0, 0, 0)), (1300, 20))
+            self.screen.blit(self.font.render(f"Colony 2", True, (0, 0, 0)), (1425, 20))
+            self.screen.blit(self.font.render(f"Colony 3", True, (0, 0, 0)), (1550, 20))
+            self.screen.blit(self.font.render(f"Colony 4", True, (0, 0, 0)), (1675, 20))        
+
+            self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1300, 220))
+
 
     def run(self):
         while self.running:
@@ -210,42 +244,9 @@ class Simulation:
                 draw_ants(self.screen,col.ants)
         
 
-            # Draw elements of GUI
-
-            pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((1280, 0), (500, 920)))
-            pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((0, 720), (1280, 200)))
-
-            self.button_pause.draw(self.screen)
-            self.button_reset_ants.draw(self.screen)
-            self.button_reset.draw(self.screen)
-            self.button_food.draw(self.screen)
-            self.button_obstacle.draw(self.screen)
-            self.button_nest.draw(self.screen)
-
-            text_ants = self.font.render(f"ants num:", True, (0, 0, 0))
-            self.screen.blit(text_ants, (1300, 130))
-            self.text_box_ants.draw(self.screen)
-            
-            text_cursor = self.font.render(f"cursor size:", True, (0, 0, 0))
-            self.screen.blit(text_cursor, (310, 860))
-            self.text_box_cursor.draw(self.screen)
-
-            text_fps = self.font.render(f"FPS:", True, (0, 0, 0))
-            self.screen.blit(text_fps, (700, 860))
-            self.text_box_fps.draw(self.screen)
-
-            text_food = self.font.render(f"food collected: {self.colonys[0].food_collected}" , True, (0, 0, 0))
-            self.screen.blit(text_food, (1300, 600))
-
-            self.screen.blit(self.font.render(f"Colony 1", True, (0, 0, 0)), (1300, 20))
-            self.screen.blit(self.font.render(f"Colony 2", True, (0, 0, 0)), (1425, 20))
-            self.screen.blit(self.font.render(f"Colony 3", True, (0, 0, 0)), (1550, 20))
-            self.screen.blit(self.font.render(f"Colony 4", True, (0, 0, 0)), (1675, 20))        
-
-            self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1300, 220))
+            self.draw_gui()
 
             
-            # flip() the display to put your work on screen
             pygame.display.flip() 
             self.clock.tick(self.settings.FPS)  # sets FPS limit
         

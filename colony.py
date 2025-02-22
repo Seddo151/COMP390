@@ -17,7 +17,9 @@ class Colony:
         else:
             self.ants = []
 
+
     def update_ants(self):
+        self.food_collected = 0
         for ant in self.ants:
             ant.move()
             ant.deposit_pheromone(grid)
