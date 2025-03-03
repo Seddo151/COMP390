@@ -1,6 +1,5 @@
 import random
 from settings import Settings
-from grid import grid
 
 class Ant:
     def __init__(self, x, y, nest_location):
@@ -14,7 +13,7 @@ class Ant:
         self.food_collected_count = 0
        
 
-    def move(self):
+    def move(self, grid):
 
         # Increment timer if in the returning state
         if self.has_food == True:
@@ -27,7 +26,7 @@ class Ant:
             self.returning_timer = 0  # Reset the timer
 
 
-        self.follow_pheromones()
+        self.follow_pheromones(grid)
         self.x = max(0, min(self.x, Settings.GRID_COLUMNS))
         self.y = max(0, min(self.y, Settings.GRID_ROWS))
 
@@ -38,7 +37,7 @@ class Ant:
             self.visited_positions.pop(0)
 
 
-    def follow_pheromones(self):
+    def follow_pheromones(self, grid):
     
         directions = [
         (0, 1), # Up
@@ -52,7 +51,7 @@ class Ant:
         ]
          
        
-        best_score, best_direction, possible_directions = self.find_best(directions)
+        best_score, best_direction, possible_directions = self.find_best(directions, grid)
         # Introduce randomness to break loops
         if possible_directions == []:
             dx, dy = (0,0)
@@ -70,7 +69,7 @@ class Ant:
         self.y += dy
 
 
-    def find_best(self, directions):
+    def find_best(self, directions, grid):
         best_direction = None
         best_score = -float('inf')
         possible_directions = []
@@ -94,8 +93,8 @@ class Ant:
                 continue  # Skip the previous position
             
             pheromone_level = (
-            grid[ny][nx]["pheromone"].pheromone_food if self.has_food == False
-            else grid[ny][nx]["pheromone"].pheromone_home
+            grid.get_cell(ny,nx)["pheromone"].pheromone_food if not self.has_food
+            else grid.get_cell(ny,nx)["pheromone"].pheromone_home
             )
             # Combine pheromone level with nest alignment for returning ants only
             direction_alignment = (dx * nest_dx + dy * nest_dy) if self.has_food else 0

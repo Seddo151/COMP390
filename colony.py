@@ -1,6 +1,4 @@
 from ant import Ant
-from settings import Settings
-from grid import grid
 
 class Colony:
     def __init__(self):
@@ -18,15 +16,15 @@ class Colony:
             self.ants = []
 
 
-    def update_ants(self):
+    def update_ants(self, grid):
         self.food_collected = 0
         for ant in self.ants:
-            ant.move()
+            ant.move(grid.grid)
             ant.deposit_pheromone(grid)
             ant.change_state(grid)
             self.food_collected += ant.food_collected_count
 
-    def place_nest(self, x, y):
+    def place_nest(self,grid, x, y):
         if self.nest_location:
             # Remove the old nest
             old_x, old_y = self.nest_location

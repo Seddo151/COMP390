@@ -1,9 +1,7 @@
 import pygame
-import random
+import cProfile
 from settings import Settings
-from draw import draw_grid, draw_ants
-from ant import Ant
-from grid import grid, update_pheromones
+from grid import Grid
 from gui import Button, TextBox
 from colony import Colony
 
@@ -23,10 +21,11 @@ class Simulation:
         self.mouse3_dragging = False
 
         self.colonys = [Colony()]
+        self.grid = Grid()
 
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24)
-        self.screen = pygame.display.set_mode((Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT))
+        self.screen = pygame.display.set_mode((Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT), pygame.DOUBLEBUF)
         pygame.display.set_caption("Ant Colony Simulation")
 
         # Create GUI elements
@@ -45,30 +44,17 @@ class Simulation:
         self.text_box_fps = TextBox((750, 850), (100, 40), 3, str(Settings.FPS))
 
 
-
     def reset_simulation(self):
-        self.reset_grid()
+        self.grid.reset_grid()
         self.reset_ants()
 
-    def reset_grid(self):
-        for row in grid:
-            for cell in row:
-                cell["food"] = 0
-                cell["obstacle"] = False
-                # cell["nest"] = False
-              
 
     def reset_ants(self):
         
         for col in self.colonys:
             col.reset_ants()
 
-        # Reset pheromones
-        for row in grid:
-            for cell in row:
-                if cell["nest"] == False or cell["food"] <= 0:
-                    cell["pheromone"].pheromone_food = 0
-                    cell["pheromone"].pheromone_home = 0
+        self.grid.reset_pheromones()
         
 
     def handle_event(self):
@@ -91,9 +77,9 @@ class Simulation:
                 
             if event.type == pygame.MOUSEMOTION:
                 if self.mouse1_dragging:
-                    self.place_item(event.pos)
+                    self.modify_item(event.pos,'place')
                 elif self.mouse3_dragging:
-                    self.delete_item(event.pos)
+                    self.modify_item(event.pos,'delete')
 
             if self.button_reset.is_clicked(event):
                 self.reset_simulation()
@@ -141,7 +127,8 @@ class Simulation:
             except ValueError:
                 pass  # Ignore invalid input (non-integer values)
 
-    def place_item(self, pos):
+    def modify_item(self, pos, action):
+        grid = self.grid.grid
         # Get the mouse position
         mouse_x, mouse_y = pos
         # Calculate the grid position
@@ -154,46 +141,31 @@ class Simulation:
         end_x = min(len(grid[0]) - 1, start_x + self.cursor_size - 1)
         end_y = min(len(grid) - 1, start_y + self.cursor_size - 1)
 
-         # Place items in the calculated area
+        # Place items in the calculated area
         for x in range(start_x, end_x + 1):
             for y in range(start_y, end_y + 1):
-                if self.placing_food:
-                    grid[y][x]["food"] += self.settings.FOOD_NUM
-                    grid[y][x]["pheromone"].deposit_food_pheromone(255)
-                elif self.placing_obstacle:
-                    grid[y][x]["obstacle"] = True
-                elif self.placing_nest:
-                    # Ensure only one nest per colony
-                    for col in self.colonys:
-                        col.place_nest(x, y)
-
-    def delete_item(self, pos):
-        # Get the mouse position
-        mouse_x, mouse_y = pos
-        # Calculate the grid position
-        grid_x = mouse_x // self.settings.CELL_SIZE
-        grid_y = mouse_y // self.settings.CELL_SIZE
-
-        # Calculate the start and end positions for the item deletion
-        start_x = max(0, grid_x - self.cursor_size // 2)
-        start_y = max(0, grid_y - self.cursor_size // 2)
-        end_x = min(len(grid[0]) - 1, start_x + self.cursor_size - 1)
-        end_y = min(len(grid) - 1, start_y + self.cursor_size - 1)
-
-        # Delete items in the calculated area
-        for x in range(start_x, end_x + 1):
-            for y in range(start_y, end_y + 1):
-                if  self.placing_food:
-                    # Remove food on the grid square
-                    grid[y][x]["food"] -= self.settings.FOOD_NUM
-                    grid[y][x]["pheromone"].clear_pheromone()
-                if  self.placing_obstacle:
-                    grid[y][x]["obstacle"] = False
-                if self.placing_nest:
-                    grid[y][x]["nest"] = False
-                    grid[y][x]["pheromone"].clear_pheromone()
-
-
+                if action == 'place':
+                    if self.placing_food:
+                        grid[y][x]["food"] += self.settings.FOOD_NUM
+                        grid[y][x]["pheromone"].deposit_food_pheromone(255)
+                    elif self.placing_obstacle:
+                        grid[y][x]["obstacle"] = True
+                    elif self.placing_nest:
+                        # Ensure only one nest per colony
+                        for col in self.colonys:
+                            col.place_nest(grid, x, y)
+                elif action == 'delete':
+                    if  self.placing_food:
+                        # Remove food on the grid square
+                        grid[y][x]["food"] -= self.settings.FOOD_NUM
+                        grid[y][x]["pheromone"].clear_pheromone()
+                    if  self.placing_obstacle:
+                        grid[y][x]["obstacle"] = False
+                    if self.placing_nest:
+                        grid[y][x]["nest"] = False
+                        grid[y][x]["pheromone"].clear_pheromone()
+        
+ 
     def draw_gui(self):
         # Draw elements of GUI
 
@@ -227,6 +199,9 @@ class Simulation:
             self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1300, 220))
 
 
+    
+
+
     def run(self):
         while self.running:
             self.handle_event()
@@ -235,13 +210,13 @@ class Simulation:
 
             if not self.paused:
                 for col in self.colonys:
-                    col.update_ants()
-                update_pheromones()
+                    col.update_ants(self.grid)
+                self.grid.update_pheromones()
 
-            draw_grid(self.screen)
+            self.grid.draw_grid(self.screen)
 
             for col in self.colonys:
-                draw_ants(self.screen,col.ants)
+                self.grid.draw_ants(self.screen, col.ants)
         
 
             self.draw_gui()
@@ -256,3 +231,4 @@ class Simulation:
 if __name__ == "__main__":
     sim = Simulation()
     sim.run()
+    # cProfile.run('sim.run()', sort='cumulative')
