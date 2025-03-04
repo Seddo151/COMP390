@@ -176,7 +176,7 @@ class Simulation:
                 for col in self.colonys:
                     col.update_ants(self.grid)
                 self.grid.update_pheromones()
-
+            
             self.grid.draw_grid(self.screen)
 
             for col in self.colonys:

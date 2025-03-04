@@ -15,8 +15,15 @@ class Pheromone:
         self.pheromone_food = 0
 
     def decay(self):
-        self.pheromone_food = max(0, self.pheromone_food - self.decay_rate)
-        self.pheromone_home = max(0, self.pheromone_home - self.decay_rate)
+        if self.pheromone_food < 0.5:
+            self.pheromone_food = 0
+        else:
+            self.pheromone_food = max(0, self.pheromone_food * (1 - self.decay_rate))
+
+        if self.pheromone_home < 0.5:
+            self.pheromone_home = 0
+        else:
+            self.pheromone_home = max(0, self.pheromone_home * (1 - self.decay_rate))
         
 
     

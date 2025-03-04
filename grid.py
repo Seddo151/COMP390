@@ -32,8 +32,8 @@ class Grid:
     def reset_pheromones(self):
         for row in self._grid:
             for cell in row:
-                cell["pheromone"].pheromone_food = 0
-                cell["pheromone"].pheromone_home = 0
+                cell["pheromone"].clear_pheromone()
+                
 
     def get_cell(self, x, y):
         if 0 <= x < len(self._grid[0]) and 0 <= y < len(self._grid):
@@ -43,7 +43,7 @@ class Grid:
     def set_food(self, x, y, amount):
         cell = self.get_cell(x,y)
         if cell:
-            cell["food"] = cell["food"] + amount
+            cell["food"] = max(0, cell["food"] + amount)
         
     def set_obstacle(self, x, y, is_obstacle=True):
         cell = self.get_cell(x,y)
@@ -88,7 +88,6 @@ class Grid:
                 if action == 'place':
                     if type == 'food':
                         self.set_food(x, y, food_num)
-                        self.set_pheromone(x, y, 'food', 255)
                     elif type == 'obstacle':
                         self.set_obstacle(x, y)
                     
@@ -96,16 +95,10 @@ class Grid:
                     if  type == 'food':
                         # Remove food on the grid square
                         self.set_food(x, y, -food_num)
-                        self.set_pheromone(x, y, 'clear')
                     if  type == 'obstacle':
                         self.set_obstacle(x, y, False)
                     if type == 'nest':
                         self.set_nest(x, y, False)
-                        self.set_pheromone(x, y, 'clear')
-
-
-
-
 
 
     def draw_grid(self, screen):
@@ -136,3 +129,4 @@ class Grid:
             pygame.draw.circle(screen, (0, 0, 0),
                                 (ant.x * cell_size + cell_size // 2, ant.y * cell_size + cell_size // 2),
                                 cell_size // 3)
+            
