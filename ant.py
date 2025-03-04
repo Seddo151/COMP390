@@ -11,6 +11,17 @@ class Ant:
         self.last_direction = (0, 0) # Last Direction
         self.returning_timer = 0  # Timer for returning state
         self.food_collected_count = 0
+
+        self.directions = [
+        (0, 1), # Up
+          (1, 0), # Right
+            (0, -1), # Down
+              (-1, 0), # Left
+        (1, 1), # Up-right
+          (1, -1), # Up-left
+            (-1, 1), # Down-right
+              (-1, -1) # Down-left
+        ] 
        
 
     def move(self, grid):
@@ -27,8 +38,8 @@ class Ant:
 
 
         self.follow_pheromones(grid)
-        self.x = max(0, min(self.x, Settings.GRID_COLUMNS))
-        self.y = max(0, min(self.y, Settings.GRID_ROWS))
+        self.x = max(0, min(self.x, grid.columns))
+        self.y = max(0, min(self.y, grid.rows))
 
         # Update visited positions
         current_position = (self.x, self.y)
@@ -38,20 +49,8 @@ class Ant:
 
 
     def follow_pheromones(self, grid):
-    
-        directions = [
-        (0, 1), # Up
-          (1, 0), # Right
-            (0, -1), # Down
-              (-1, 0), # Left
-        (1, 1), # Up-right
-          (1, -1), # Up-left
-            (-1, 1), # Down-right
-              (-1, -1) # Down-left
-        ]
-         
        
-        best_score, best_direction, possible_directions = self.find_best(directions, grid)
+        best_score, best_direction, possible_directions = self.find_best(grid)
         # Introduce randomness to break loops
         if possible_directions == []:
             dx, dy = (0,0)
@@ -69,22 +68,22 @@ class Ant:
         self.y += dy
 
 
-    def find_best(self, directions, grid):
+    def find_best(self, grid):
         best_direction = None
         best_score = -float('inf')
         possible_directions = []
         # Calculate the direction of the nest
         nest_dx, nest_dy = self.calculate_nest_direction()  
 
-        for dx, dy in directions:
+        for dx, dy in self.directions:
             nx, ny = self.x + dx, self.y + dy
 
             # Skip out-of-bounds directions
-            if not (0 <= nx <= Settings.GRID_COLUMNS and 0 <= ny <= Settings.GRID_ROWS):
+            if not (0 <= nx <= grid.columns and 0 <= ny <= grid.rows):
                 continue
 
             # skips directions blocked by obstacles
-            if grid[ny][nx]["obstacle"]:
+            if grid.get_cell(nx,ny)["obstacle"]:
                 continue
 
             possible_directions.append((dx, dy))
@@ -93,8 +92,8 @@ class Ant:
                 continue  # Skip the previous position
             
             pheromone_level = (
-            grid.get_cell(ny,nx)["pheromone"].pheromone_food if not self.has_food
-            else grid.get_cell(ny,nx)["pheromone"].pheromone_home
+            grid.get_cell(nx, ny)["pheromone"].pheromone_food if not self.has_food
+            else grid.get_cell(nx, ny)["pheromone"].pheromone_home
             )
             # Combine pheromone level with nest alignment for returning ants only
             direction_alignment = (dx * nest_dx + dy * nest_dy) if self.has_food else 0
@@ -110,20 +109,20 @@ class Ant:
     def deposit_pheromone(self,grid):
         
         if self.has_food == True:
-            grid[self.y][self.x]["pheromone"].deposit_food_pheromone(1)
+            grid.set_pheromone(self.x, self.y, 'food', 1)
             #grid[self.y][self.x]["pheromone"].set_last_reinforced()
         else:
-            grid[self.y][self.x]["pheromone"].deposit_home_pheromone(1)
+            grid.set_pheromone(self.x, self.y, 'home', 1)
 
     
     def change_state(self,grid):
         
-        if grid[self.y][self.x]["food"] > 0 and self.has_food == False:
+        if grid.get_cell(self.x, self.y)["food"] > 0 and self.has_food == False:
             self.has_food = True
             self.visited_positions = [] # Reset visited positions
-            grid[self.y][self.x]["food"] -= 1 
+            grid.set_food(self.x, self.y, -1)
 
-        elif grid[self.y][self.x]["nest"] == True and self.has_food == True:
+        elif grid.get_cell(self.x, self.y)["nest"] == True and self.has_food == True:
             self.has_food = False
             self.visited_positions = [] # Reset visited positions
             self.food_collected_count += 1
