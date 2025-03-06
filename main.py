@@ -20,7 +20,8 @@ class Simulation:
         self.mouse1_dragging = False
         self.mouse3_dragging = False
 
-        self.colonys = [Colony()]
+        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))]
+        self.selected_nest_index = 0
         self.grid = Grid()
 
         self.clock = pygame.time.Clock()
@@ -34,24 +35,32 @@ class Simulation:
 
         self.button_food = Button("Food", (210, 750), (100, 50))
         self.button_obstacle = Button("Obstacle", (410, 750), (100, 50))
-        self.button_nest = Button("Nest", (1300, 50), (50, 50))
-
-        self.text_box_ants = TextBox((1300, 150), (50, 40), 4, str(self.colonys[0].num_ants))
         self.button_reset_ants = Button("Reset Ants", (1150, 750), (100, 50))
-        
-        self.text_box_cursor = TextBox((410, 850), (100, 40), 2, str(self.cursor_size))
+        self.textbox_cursor = TextBox((410, 850), (100, 40), 2, str(self.cursor_size))
+        self.textbox_fps = TextBox((750, 850), (100, 40), 3, str(Settings.FPS))
 
-        self.text_box_fps = TextBox((750, 850), (100, 40), 3, str(Settings.FPS))
+        self.button_nest_1 = Button("Nest", (1300, 50), (50, 50))
+        self.textbox_ants_1 = TextBox((1300, 150), (50, 40), 4, str(self.colonies[0].num_ants))
+
+        self.button_nest_2 = Button("Nest", (1425, 50), (50, 50))
+        self.textbox_ants_2 = TextBox((1425, 150), (50, 40), 4, str(self.colonies[1].num_ants))
+
+        self.button_nest_3 = Button("Nest", (1550, 50), (50, 50))
+        self.textbox_ants_3 = TextBox((1550, 150), (50, 40), 4, str(self.colonies[0].num_ants))
+
+        self.button_nest_4 = Button("Nest", (1675, 50), (50, 50))
+        self.textbox_ants_4 = TextBox((1675, 150), (50, 40), 4, str(self.colonies[1].num_ants))
 
 
     def reset_simulation(self):
         self.grid.reset_grid()
         self.reset_ants()
+        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))]
 
 
     def reset_ants(self):
         
-        for col in self.colonys:
+        for col in self.colonies:
             col.reset_ants()
 
         self.grid.reset_pheromones()
@@ -78,8 +87,7 @@ class Simulation:
 
             if event.type == pygame.MOUSEMOTION:
                 if self.modify_state == 'nest' and self.mouse1_dragging:
-                    for col in self.colonys:
-                            col.move_nest(self.grid, event.pos)
+                    self.colonies[self.selected_nest_index].move_nest(self.grid, event.pos)
                 elif self.mouse1_dragging:
                     self.grid.modify_item(event.pos,'place', self.cursor_size, self.modify_state)
                 elif self.mouse3_dragging:
@@ -103,27 +111,61 @@ class Simulation:
             if self.button_obstacle.is_clicked(event):
                 self.modify_state = 'obstacle'
             
-            if self.button_nest.is_clicked(event):
+            if self.button_nest_1.is_clicked(event):
                 self.modify_state = 'nest'
+                self.selected_nest_index = 0
+
+            if self.button_nest_2.is_clicked(event):
+                self.modify_state = 'nest'
+                self.selected_nest_index = 1
             
-            self.text_box_cursor.is_clicked(event)
-            self.text_box_cursor.handle_event(event)
+            if self.button_nest_3.is_clicked(event):
+                self.modify_state = 'nest'
+                self.selected_nest_index = 2
+
+            if self.button_nest_4.is_clicked(event):
+                self.modify_state = 'nest'
+                self.selected_nest_index = 3
+            
+            self.textbox_cursor.is_clicked(event)
+            self.textbox_cursor.handle_event(event)
             try:
-                self.cursor_size = max(0, int(self.text_box_cursor.text))
+                self.cursor_size = max(0, int(self.textbox_cursor.text))
             except ValueError:
                 pass  # Ignore invalid input (non-integer values)
 
-            self.text_box_ants.is_clicked(event)  # Activate/deactivate text box
-            self.text_box_ants.handle_event(event)  # Handle text input
+            self.textbox_ants_1.is_clicked(event)  # Activate/deactivate text box
+            self.textbox_ants_1.handle_event(event)  # Handle text input
             try:
-                    self.colonys[0].num_ants = int(self.text_box_ants.text)
+                    self.colonies[0].num_ants = int(self.textbox_ants_1.text)
             except ValueError:
                 pass  # Ignore invalid input (non-integer values)
 
-            self.text_box_fps.is_clicked(event)  # Activate/deactivate text box
-            self.text_box_fps.handle_event(event)  # Handle text input
+            self.textbox_ants_2.is_clicked(event)  # Activate/deactivate text box
+            self.textbox_ants_2.handle_event(event)  # Handle text input
             try:
-                    self.settings.FPS = int(self.text_box_fps.text)
+                    self.colonies[1].num_ants = int(self.textbox_ants_2.text)
+            except ValueError:
+                pass  # Ignore invalid input (non-integer values)
+
+            self.textbox_ants_3.is_clicked(event)  # Activate/deactivate text box
+            self.textbox_ants_3.handle_event(event)  # Handle text input
+            try:
+                    self.colonies[2].num_ants = int(self.textbox_ants_3.text)
+            except ValueError:
+                pass  # Ignore invalid input (non-integer values)
+
+            self.textbox_ants_4.is_clicked(event)  # Activate/deactivate text box
+            self.textbox_ants_4.handle_event(event)  # Handle text input
+            try:
+                    self.colonies[3].num_ants = int(self.textbox_ants_4.text)
+            except ValueError:
+                pass  # Ignore invalid input (non-integer values)
+
+            self.textbox_fps.is_clicked(event)  # Activate/deactivate text box
+            self.textbox_fps.handle_event(event)  # Handle text input
+            try:
+                    self.settings.FPS = int(self.textbox_fps.text)
             except ValueError:
                 pass  # Ignore invalid input (non-integer values)
 
@@ -139,19 +181,40 @@ class Simulation:
             self.button_reset.draw(self.screen)
             self.button_food.draw(self.screen)
             self.button_obstacle.draw(self.screen)
-            self.button_nest.draw(self.screen)
 
+            self.button_nest_1.draw(self.screen)
             self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1300, 130))
-            self.text_box_ants.draw(self.screen)
+            self.textbox_ants_1.draw(self.screen)
+
+            self.button_nest_2.draw(self.screen)
+            self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1425, 130))
+            self.textbox_ants_2.draw(self.screen)
+
+            self.button_nest_3.draw(self.screen)
+            self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1550, 130))
+            self.textbox_ants_3.draw(self.screen)
+
+            self.button_nest_4.draw(self.screen)
+            self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1675, 130))
+            self.textbox_ants_4.draw(self.screen)
             
             self.screen.blit(self.font.render(f"cursor size:", True, (0, 0, 0)), (310, 860))
-            self.text_box_cursor.draw(self.screen)
+            self.textbox_cursor.draw(self.screen)
 
             self.screen.blit(self.font.render(f"FPS:", True, (0, 0, 0)), (700, 860))
-            self.text_box_fps.draw(self.screen)
+            self.textbox_fps.draw(self.screen)
 
-            text_food = self.font.render(f"food collected: {self.colonys[0].food_collected}" , True, (0, 0, 0))
+            text_food = self.font.render(f"food collected: {self.colonies[0].food_collected}" , True, (0, 0, 0))
             self.screen.blit(text_food, (1300, 600))
+
+            text_food = self.font.render(f"food collected: {self.colonies[1].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 700))
+
+            text_food = self.font.render(f"food collected: {self.colonies[2].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 800))
+
+            text_food = self.font.render(f"food collected: {self.colonies[3].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 900))
 
             self.screen.blit(self.font.render(f"Colony 1", True, (0, 0, 0)), (1300, 20))
             self.screen.blit(self.font.render(f"Colony 2", True, (0, 0, 0)), (1425, 20))
@@ -159,6 +222,10 @@ class Simulation:
             self.screen.blit(self.font.render(f"Colony 4", True, (0, 0, 0)), (1675, 20))        
 
             self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1300, 220))
+            self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1425, 220))
+            self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1550, 220))
+            self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1675, 220))
+
 
 
     
@@ -173,14 +240,14 @@ class Simulation:
             self.screen.fill("White")
 
             if not self.paused:
-                for col in self.colonys:
+                for col in self.colonies:
                     col.update_ants(self.grid)
                 self.grid.update_pheromones()
             
             self.grid.draw_grid(self.screen)
 
-            for col in self.colonys:
-                self.grid.draw_ants(self.screen, col.ants)
+            for col in self.colonies:
+                self.grid.draw_ants(self.screen, col.ants, col.species)
         
 
             self.draw_gui()

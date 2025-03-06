@@ -2,10 +2,10 @@ from ant import Ant
 from settings import Settings
 
 class Colony:
-    def __init__(self):
+    def __init__(self, species = (0,0,0)):
         self.nest_location =  None
-        self.species = ""
-        self.num_ants = 1000
+        self.species = species
+        self.num_ants = 500
         self.ants = []
         self.food_collected = 0
 

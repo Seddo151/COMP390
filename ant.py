@@ -11,17 +11,18 @@ class Ant:
         self.last_direction = (0, 0) # Last Direction
         # self.returning_timer = 0  # Timer for returning state
         self.food_collected_count = 0
+        self.memory_size = Settings.ANT_MEMORY_SIZE
 
         self.directions = [
-        (0,0),
-        (0, 1), # Up
-          (1, 0), # Right
+            (0,0), # None
+            (0, 1), # Up
+            (1, 0), # Right
             (0, -1), # Down
-              (-1, 0), # Left
-        (1, 1), # Up-right
-          (1, -1), # Up-left
+            (-1, 0), # Left
+            (1, 1), # Up-right
+            (1, -1), # Up-left
             (-1, 1), # Down-right
-              (-1, -1) # Down-left
+            (-1, -1) # Down-left
         ] 
        
 
@@ -45,7 +46,7 @@ class Ant:
         # Update visited positions
         current_position = (self.x, self.y)
         self.visited_positions.append(current_position)
-        if len(self.visited_positions) > Settings.ANT_MEMORY_SIZE:  # Limit memory to 20 positions
+        if len(self.visited_positions) > self.memory_size:  # Limit memory to 20 positions
             self.visited_positions.pop(0)
 
 
@@ -123,10 +124,9 @@ class Ant:
     def deposit_pheromone(self,grid):
         if self.last_direction != (0,0):
             if self.has_food == True:
-                grid.set_pheromone(self.x, self.y, 'food', 1)
-                #grid[self.y][self.x]["pheromone"].set_last_reinforced()
+                grid.set_pheromone(self.x, self.y, 'food', 2)
             else:
-                grid.set_pheromone(self.x, self.y, 'home', 1)
+                grid.set_pheromone(self.x, self.y, 'home', 2)
 
     
     def change_state(self,grid):

@@ -2,6 +2,15 @@ from settings import Settings
 from pheromone import Pheromone
 import pygame
 
+BLACK = (0,0,0)
+RED = (255,0,0)
+GREEN = (0,128,0)
+WHITE = (255,255,255)
+BROWN = (165,42,42)
+DIM_GREY = (105,105,105)
+
+
+
 class Grid:
      
     def __init__(self):
@@ -27,7 +36,7 @@ class Grid:
             for cell in row:
                 cell["food"] = 0
                 cell["obstacle"] = False
-                # cell["nest"] = False
+                cell["nest"] = False
 
     def reset_pheromones(self):
         for row in self._grid:
@@ -109,24 +118,24 @@ class Grid:
                 pheromone = cell["pheromone"]
 
                 if cell["obstacle"]:
-                    colour = "dimgrey"
+                    colour = DIM_GREY
                 elif cell["nest"]:
-                    colour = "brown" 
+                    colour = BROWN
                 elif cell["food"] > 0:
-                    colour = "green"
+                    colour = GREEN
                 elif pheromone.pheromone_food > 0:
-                    colour = (255,255 - pheromone.pheromone_food,255)
+                    colour = (255,round(255 - pheromone.pheromone_food),255)
                 elif pheromone.pheromone_home > 0:
-                    colour = (255 - pheromone.pheromone_home,255,255)
+                    colour = (round(255 - pheromone.pheromone_home),255,255)
                 else:
-                    colour = (255, 255, 255)
+                    colour = WHITE
 
                 screen.fill(colour, rect=[col * cell_size, row * cell_size, cell_size, cell_size])
 
-    def draw_ants(self, screen, ants):
+    def draw_ants(self, screen, ants, colour):
         cell_size = Settings.CELL_SIZE
         for ant in ants:
-            pygame.draw.circle(screen, (0, 0, 0),
+            pygame.draw.circle(screen, colour,
                                 (ant.x * cell_size + cell_size // 2, ant.y * cell_size + cell_size // 2),
                                 cell_size // 3)
             

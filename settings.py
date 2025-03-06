@@ -12,7 +12,7 @@ class Settings:
 
     DEFAULT_NUM_ANTS = 0
     ANT_MEMORY_SIZE = 40 # how many previous cells the ant wont re-visit
-    PHEROMONE_DECAY_RATE = 0.02 # speed that pheromones decay
+    PHEROMONE_DECAY_RATE = 0.01 # speed that pheromones decay
 
     FOOD_NUM = 100 # food available on a placed food cell
 
