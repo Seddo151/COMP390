@@ -61,7 +61,7 @@ class Simulation:
     def reset_ants(self):
         
         for col in self.colonies:
-            col.reset_ants()
+            col.reset_ants(self.grid)
 
         self.grid.reset_pheromones()
         
@@ -243,7 +243,9 @@ class Simulation:
                 for col in self.colonies:
                     col.update_ants(self.grid)
                 self.grid.update_pheromones()
+                self.grid.diffuse_pheromones()
             
+
             self.grid.draw_grid(self.screen)
 
             for col in self.colonies:

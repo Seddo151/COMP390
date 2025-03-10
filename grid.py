@@ -1,6 +1,6 @@
 from settings import Settings
-from pheromone import Pheromone
 import pygame
+import numpy as np
 
 BLACK = (0,0,0)
 RED = (255,0,0)
@@ -9,7 +9,24 @@ WHITE = (255,255,255)
 BROWN = (165,42,42)
 DIM_GREY = (105,105,105)
 
-
+def diffuse_array(arr, diffusion_rate):
+    # Pad the array with zeros so that border cells get treated correctly
+    padded = np.pad(arr, ((1,1), (1,1)), mode='constant', constant_values=0)
+    # Sum the values of the 8 neighbors using slicing
+    neighbors_sum = (
+          padded[:-2, 1:-1]  +  # Up
+          padded[2:, 1:-1]   +  # Down
+          padded[1:-1, :-2]  +  # Left
+          padded[1:-1, 2:]   +  # Right
+          padded[:-2, :-2]   +  # Top-left
+          padded[:-2, 2:]    +  # Top-right
+          padded[2:, :-2]    +  # Bottom-left
+          padded[2:, 2:]        # Bottom-right
+    )
+    # Compute the average of neighbors
+    neighbors_avg = neighbors_sum / 8.0
+    # Return a blend of the original value and neighbors' average
+    return (1 - diffusion_rate) * arr + diffusion_rate * neighbors_avg
 
 class Grid:
      
@@ -18,63 +35,79 @@ class Grid:
         self.rows = Settings.GRID_ROWS
         self.columns = Settings.GRID_COLUMNS
 
-        self._grid = [[{"pheromone": Pheromone(Settings.PHEROMONE_DECAY_RATE),
-                    "food": 0,
-                    "nest": False,
-                    "obstacle": False}
-                    for i in range(Settings.SIM_WIDTH // Settings.CELL_SIZE)]
-                    for i in range(Settings.SIM_HEIGHT // Settings.CELL_SIZE)]
+        self.food = np.zeros((self.rows, self.columns), dtype=int)
+        self.nest = np.zeros((self.rows, self.columns), dtype=bool)
+        self.obstacle = np.zeros((self.rows, self.columns), dtype=bool)
+        
+        self.pheromone_food = np.zeros((self.rows, self.columns), dtype=float)
+        self.pheromone_home = np.zeros((self.rows, self.columns), dtype=float)
+
 
     def update_pheromones(self):
-        for row in self._grid:
-            for cell in row:
-                if cell["nest"] == False or cell["food"] <= 0:
-                    cell["pheromone"].decay()
-                
+        decay_rate_food = Settings.DECAY_RATE_FOOD
+        decay_rate_home = Settings.DECAY_RATE_HOME
+    
+        # Multiply all cells by (1 - decay_rate) at once
+        self.pheromone_food *= (1 - decay_rate_food)
+        self.pheromone_home *= (1 - decay_rate_home)
+        
+        # Optionally, set very low values to 0 to avoid floating-point artifacts:
+        self.pheromone_food[self.pheromone_food < 0.5] = 0
+        self.pheromone_home[self.pheromone_home < 0.5] = 0
+
+    def deposit_food_pheromone(self, x, y, amount):
+        # Use np.clip to ensure the value doesn't exceed 255
+        self.pheromone_food[y, x] = np.clip(self.pheromone_food[y, x] + amount, 0, 255)
+    
+    def deposit_home_pheromone(self, x, y, amount):
+        self.pheromone_home[y, x] = np.clip(self.pheromone_home[y, x] + amount, 0, 255)
+
+
     def reset_grid(self):
-        for row in self._grid:
-            for cell in row:
-                cell["food"] = 0
-                cell["obstacle"] = False
-                cell["nest"] = False
+        self.food.fill(0)
+        self.obstacle.fill(False)
+        self.nest.fill(False)
 
     def reset_pheromones(self):
-        for row in self._grid:
-            for cell in row:
-                cell["pheromone"].clear_pheromone()
+        self.pheromone_food.fill(0)
+        self.pheromone_home.fill(0)
                 
 
     def get_cell(self, x, y):
-        if 0 <= x < len(self._grid[0]) and 0 <= y < len(self._grid):
-            return self._grid[y][x]
+        # Return a dictionary for compatibility if needed.
+        if 0 <= x < self.columns and 0 <= y < self.rows:
+            return {
+                "food": self.food[y, x],
+                "nest": self.nest[y, x],
+                "obstacle": self.obstacle[y, x],
+                "pheromone_food": self.pheromone_food[y, x],
+                "pheromone_home": self.pheromone_home[y, x]
+            }
         return None
     
     def set_food(self, x, y, amount):
-        cell = self.get_cell(x,y)
-        if cell:
-            cell["food"] = max(0, cell["food"] + amount)
+        if 0 <= x < self.columns and 0 <= y < self.rows:
+            self.food[y, x] = max(0, self.food[y, x] + amount)
         
     def set_obstacle(self, x, y, is_obstacle=True):
-        cell = self.get_cell(x,y)
-        if cell:
-            cell["obstacle"] = is_obstacle
+        if 0 <= x < self.columns and 0 <= y < self.rows:
+            self.obstacle[y, x] = is_obstacle
     
     def set_nest(self, x, y, is_nest=True):
-        cell = self.get_cell(x,y)
-        if cell:
-            cell["nest"] = is_nest
+         if 0 <= x < self.columns and 0 <= y < self.rows:
+            self.nest[y, x] = is_nest
 
 
     def set_pheromone(self, x, y, type, amount = 0):
-        cell = self.get_cell(x,y)
-        if cell:
+         if 0 <= x < self.columns and 0 <= y < self.rows:
             if type == 'food':
-                cell["pheromone"].deposit_food_pheromone(amount)
+                # Ensure the value does not exceed a maximum (e.g., 255)
+                self.pheromone_food[y, x] = np.clip(self.pheromone_food[y, x] + amount, 0, 255)
             elif type == 'home':
-                cell["pheromone"].deposit_home_pheromone(amount)
+                self.pheromone_home[y, x] = np.clip(self.pheromone_home[y, x] + amount, 0, 255)
             elif type == 'clear':
-                cell["pheromone"].clear_pheromone()
-
+                self.pheromone_food[y, x] = 0
+                self.pheromone_home[y, x] = 0
 
     def modify_item(self, pos, action, size, type):
         cell_size = Settings.CELL_SIZE
@@ -88,8 +121,8 @@ class Grid:
         # Calculate the start and end positions for the item placement
         start_x = max(0, grid_x - size // 2)
         start_y = max(0, grid_y - size // 2)
-        end_x = min(len(self._grid[0]) - 1, start_x + size - 1)
-        end_y = min(len(self._grid) - 1, start_y + size - 1)
+        end_x = min(self.columns - 1, start_x + size - 1)
+        end_y = min(self.rows - 1, start_y + size - 1)
 
         # Place items in the calculated area
         for x in range(start_x, end_x + 1):
@@ -112,30 +145,61 @@ class Grid:
 
     def draw_grid(self, screen):
         cell_size = Settings.CELL_SIZE
-        for row in range(len(self._grid)):
-            for col in range(len(self._grid[0])):
-                cell = self._grid[row][col]
-                pheromone = cell["pheromone"]
+        # Create an empty color grid: rows x columns x 3 (for RGB)
+        grid_colors = np.empty((self.rows, self.columns, 3), dtype=np.uint8)
+        
+        # Set default color (white)
+        grid_colors[:] = WHITE
 
-                if cell["obstacle"]:
-                    colour = DIM_GREY
-                elif cell["nest"]:
-                    colour = BROWN
-                elif cell["food"] > 0:
-                    colour = GREEN
-                elif pheromone.pheromone_food > 0:
-                    colour = (255,round(255 - pheromone.pheromone_food),255)
-                elif pheromone.pheromone_home > 0:
-                    colour = (round(255 - pheromone.pheromone_home),255,255)
-                else:
-                    colour = WHITE
+        # Set obstacles: where self.obstacle is True, color is DIM_GREY
+        grid_colors[self.obstacle] = DIM_GREY
 
-                screen.fill(colour, rect=[col * cell_size, row * cell_size, cell_size, cell_size])
+        # Set nests (only where not an obstacle)
+        mask_nest = self.nest & ~self.obstacle
+        grid_colors[mask_nest] = BROWN
+
+        # Set food: where food > 0 and not already set as obstacle or nest
+        mask_food = (self.food > 0) & ~(self.obstacle | self.nest)
+        grid_colors[mask_food] = GREEN
+
+        # Set pheromone_food: where pheromone_food > 0 and cell isn’t already an obstacle, nest, or food
+        mask_pheromone_food = (self.pheromone_food > 0) & ~(self.obstacle | self.nest | (self.food > 0))
+        if np.any(mask_pheromone_food):
+            # Compute intensity: higher pheromone means lower intensity offset
+            intensity = np.clip(255 - self.pheromone_food[mask_pheromone_food], 0, 255).astype(np.uint8)
+            # Create a color array: (255, intensity, 255)
+            grid_colors[mask_pheromone_food] = np.stack((np.full_like(intensity, 255),
+                                                        intensity,
+                                                        np.full_like(intensity, 255)), axis=-1)
+            
+        # Set pheromone_home: where pheromone_home > 0 and not already set by obstacles, nests, food, or food pheromone
+        mask_pheromone_home = (self.pheromone_home > 0) & ~(self.obstacle | self.nest | (self.food > 0) | (self.pheromone_food > 0))
+        if np.any(mask_pheromone_home):
+            intensity = np.clip(255 - self.pheromone_home[mask_pheromone_home], 0, 255).astype(np.uint8)
+            grid_colors[mask_pheromone_home] = np.stack((intensity,
+                                                        np.full_like(intensity, 255),
+                                                        np.full_like(intensity, 255)), axis=-1)
+        
+        # Create a surface from the grid colors.
+        # Note: pygame.surfarray.make_surface expects the array shape as (width, height, 3)
+        surface = pygame.surfarray.make_surface(np.transpose(grid_colors, (1, 0, 2)))
+        
+        # Scale the surface up to the full pixel dimensions of the grid.
+        scaled_surface = pygame.transform.scale(surface, (self.columns * cell_size, self.rows * cell_size))
+        
+        # Blit the scaled surface onto the screen.
+        screen.blit(scaled_surface, (0, 0))
 
     def draw_ants(self, screen, ants, colour):
         cell_size = Settings.CELL_SIZE
         for ant in ants:
             pygame.draw.circle(screen, colour,
-                                (ant.x * cell_size + cell_size // 2, ant.y * cell_size + cell_size // 2),
-                                cell_size // 3)
+                            (ant.x * cell_size + cell_size // 2, ant.y * cell_size + cell_size // 2),
+                            cell_size // 3)
             
+    def diffuse_pheromones(self):
+        diffusion_rate = Settings.PHEROMONE_DIFFUSION_RATE  # e.g., 0.1 or 0.2
+        self.pheromone_food = diffuse_array(self.pheromone_food, diffusion_rate)
+        self.pheromone_home = diffuse_array(self.pheromone_home, diffusion_rate)
+
+    

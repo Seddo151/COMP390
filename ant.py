@@ -26,6 +26,7 @@ class Ant:
         ] 
        
 
+
     def move(self, grid):
 
         # Increment timer if in the returning state
@@ -34,14 +35,14 @@ class Ant:
         else:
             self.returning_timer = 0
 
-        if self.returning_timer > 200:  # Timeout returning limit 
+        if self.returning_timer > 600:  # Timeout returning limit 
             self.has_food = False
             self.returning_timer = 0  # Reset the timer
 
 
         self.follow_pheromones(grid)
-        self.x = max(0, min(self.x, grid.columns))
-        self.y = max(0, min(self.y, grid.rows))
+        self.x = max(0, min(self.x, grid.columns - 1))
+        self.y = max(0, min(self.y, grid.rows - 1))
 
         # Update visited positions
         current_position = (self.x, self.y)
@@ -56,8 +57,8 @@ class Ant:
         # Introduce randomness to break loops
         if possible_directions == []:
             dx, dy = (0,0)
-        elif best_direction and best_score  > 0 and random.random() > 0.05: # % chance to move randomly
-            if best_direction2 and best_score2  > 0 and random.random() > 0.97: #chance to take 2nd best direction
+        elif best_direction and best_score  > 0 and random.random() > 0.15: # % chance to move randomly
+            if best_direction2 and best_score2  > 0 and random.random() > 0.9: #chance to take 2nd best direction
                 dx, dy = best_direction2
             else:
                 dx, dy = best_direction
@@ -84,30 +85,30 @@ class Ant:
 
         for dx, dy in self.directions:
             nx, ny = self.x + dx, self.y + dy
-            cell = grid.get_cell(nx,ny)
+            
 
             # Skip out-of-bounds directions
-            if not (0 <= nx <= grid.columns and 0 <= ny <= grid.rows):
+            if not (0 <= nx < grid.columns and 0 <= ny < grid.rows):
                 continue
 
+            cell = grid.get_cell(nx,ny)
+            
             # skips directions blocked by obstacles
             if cell["obstacle"]:
                 continue
 
             possible_directions.append((dx, dy))
 
+            visited_penalty = 0
             if (nx, ny) in self.visited_positions:
-                continue  # Skip the previous position
+                visited_penalty = 100  # Skip the previous position
             
-            pheromone_level = (            
-                cell["pheromone"].pheromone_food if not self.has_food
-                else cell["pheromone"].pheromone_home
-            )
+            pheromone_level = cell["pheromone_food"] if not self.has_food else cell["pheromone_home"]
             # Combine pheromone level with nest alignment for returning ants only
             direction_alignment = (dx * nest_dx + dy * nest_dy) if self.has_food else 0
-            score = pheromone_level + (0.5 * direction_alignment)
+            score = pheromone_level + (2.0 * direction_alignment) - visited_penalty
 
-            if cell["food"] and not self.has_food:
+            if cell["food"]  and not self.has_food:
                 score = 256
             elif cell["nest"] and self.has_food:
                 score = 256
@@ -124,19 +125,23 @@ class Ant:
     def deposit_pheromone(self,grid):
         if self.last_direction != (0,0):
             if self.has_food == True:
-                grid.set_pheromone(self.x, self.y, 'food', 2)
+                grid.set_pheromone(self.x, self.y, 'food', 4)
             else:
-                grid.set_pheromone(self.x, self.y, 'home', 2)
+                grid.set_pheromone(self.x, self.y, 'home', 4)
 
     
     def change_state(self,grid):
+        cell = grid.get_cell(self.x, self.y)
+        if cell is None:
+            # Option 1: Clamp the coordinates (or log an error)
+            return
         
-        if grid.get_cell(self.x, self.y)["food"] > 0 and self.has_food == False:
+        if cell["food"] > 0 and self.has_food == False:
             self.has_food = True
             self.visited_positions = [] # Reset visited positions
             grid.set_food(self.x, self.y, -1)
 
-        elif grid.get_cell(self.x, self.y)["nest"] == True and self.has_food == True:
+        elif cell["nest"] == True and self.has_food == True:
             self.has_food = False
             self.visited_positions = [] # Reset visited positions
             self.food_collected_count += 1
@@ -151,3 +156,4 @@ class Ant:
         return dx / magnitude, dy / magnitude  # Unit vector toward the nest
 
    
+
