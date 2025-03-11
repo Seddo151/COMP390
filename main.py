@@ -11,61 +11,42 @@ class Simulation:
         pygame.init()
 
         self.settings = Settings()
-        self.cursor_size = 1
         self.running = True
         self.paused = True
 
-        self.modify_state = 'food'
+        self.cursor_size = 1 # Size of what the user is modifying on the grid
+        self.modify_state = 'food' # What element the user is modifying on the grid
 
-        self.mouse1_dragging = False
-        self.mouse3_dragging = False
+        self.mouse1_dragging = False # Flag for if left mouse button is pressed and mouse is moved
+        self.mouse3_dragging = False # Flag for if right mouse button is pressed and mouse is moved
 
-        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))]
-        self.selected_nest_index = 0
-        self.grid = Grid()
+        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))] # Initialised the colonys
+        self.selected_nest_index = 0 # Which nest is being moved in simulation area
+        self.grid = Grid() # Initilased the grid
 
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 24)
+        self.font = pygame.font.Font(None, 24) 
         self.screen = pygame.display.set_mode((Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT), pygame.DOUBLEBUF)
         pygame.display.set_caption("Ant Colony Simulation")
 
-        # Create GUI elements
-        self.button_pause = Button("Play", (10, 750), (100, 50))
-        self.button_reset = Button("Reset", (10, 850), (100, 50))
+        self.create_gui() # Declares GUI elements
 
-        self.button_food = Button("Food", (210, 750), (100, 50))
-        self.button_obstacle = Button("Obstacle", (410, 750), (100, 50))
-        self.button_reset_ants = Button("Reset Ants", (1150, 750), (100, 50))
-        self.textbox_cursor = TextBox((410, 850), (100, 40), 2, str(self.cursor_size))
-        self.textbox_fps = TextBox((750, 850), (100, 40), 3, str(Settings.FPS))
-
-        self.button_nest_1 = Button("Nest", (1300, 50), (50, 50))
-        self.textbox_ants_1 = TextBox((1300, 150), (50, 40), 4, str(self.colonies[0].num_ants))
-
-        self.button_nest_2 = Button("Nest", (1425, 50), (50, 50))
-        self.textbox_ants_2 = TextBox((1425, 150), (50, 40), 4, str(self.colonies[1].num_ants))
-
-        self.button_nest_3 = Button("Nest", (1550, 50), (50, 50))
-        self.textbox_ants_3 = TextBox((1550, 150), (50, 40), 4, str(self.colonies[0].num_ants))
-
-        self.button_nest_4 = Button("Nest", (1675, 50), (50, 50))
-        self.textbox_ants_4 = TextBox((1675, 150), (50, 40), 4, str(self.colonies[1].num_ants))
-
-
+    # Resets everything in the simulation area
     def reset_simulation(self):
-        self.grid.reset_grid()
-        self.reset_ants()
-        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))]
+        self.grid.clear_grid() # Clears the grid
+        self.reset_ants() # Resets the ants
+        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))] # Re-initalises the colonies
 
-
+    # Resets the ants and pheromones in the simulation area
     def reset_ants(self):
-        
+        # Resets the ants in each colony
         for col in self.colonies:
             col.reset_ants(self.grid)
 
-        self.grid.reset_pheromones()
+        self.grid.clear_pheromones() # Clears the pheromones from the grid
         
 
+    # Handles all the user interactions with the GUI
     def handle_event(self):
         for event in pygame.event.get():
 
@@ -75,16 +56,17 @@ class Simulation:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button pressed
                     self.mouse1_dragging = True
-                elif event.button == 3:
+                elif event.button == 3: # Right mouse button pressed
                     self.mouse3_dragging = True
                 
             if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:  # Left mouse button pressed
+                if event.button == 1:  # Left mouse button released
                     self.mouse1_dragging = False
-                elif event.button == 3:
+                elif event.button == 3: # Right mouse button released
                     self.mouse3_dragging = False
 
-
+            # Determines what should be modified in the simulation area
+            # Left mouse button places objects and Right mouse deletes
             if event.type == pygame.MOUSEMOTION:
                 if self.modify_state == 'nest' and self.mouse1_dragging:
                     self.colonies[self.selected_nest_index].move_nest(self.grid, event.pos)
@@ -92,7 +74,6 @@ class Simulation:
                     self.grid.modify_item(event.pos,'place', self.cursor_size, self.modify_state)
                 elif self.mouse3_dragging:
                     self.grid.modify_item(event.pos,'delete', self.cursor_size, self.modify_state)
-
 
 
             if self.button_reset.is_clicked(event):
@@ -127,51 +108,80 @@ class Simulation:
                 self.modify_state = 'nest'
                 self.selected_nest_index = 3
             
+            # Handles textbox input to determine size of modifing area
             self.textbox_cursor.is_clicked(event)
             self.textbox_cursor.handle_event(event)
             try:
                 self.cursor_size = max(0, int(self.textbox_cursor.text))
             except ValueError:
-                pass  # Ignore invalid input (non-integer values)
+                pass  # Ignores none integer values
 
-            self.textbox_ants_1.is_clicked(event)  # Activate/deactivate text box
-            self.textbox_ants_1.handle_event(event)  # Handle text input
+            # Handles textbox input to determine num of ants in colony 1
+            self.textbox_ants_1.is_clicked(event)  
+            self.textbox_ants_1.handle_event(event)  
             try:
                     self.colonies[0].num_ants = int(self.textbox_ants_1.text)
             except ValueError:
-                pass  # Ignore invalid input (non-integer values)
+                pass  # Ignores none integer values
 
-            self.textbox_ants_2.is_clicked(event)  # Activate/deactivate text box
-            self.textbox_ants_2.handle_event(event)  # Handle text input
+            # Handles textbox input to determine num of ants in colony 2
+            self.textbox_ants_2.is_clicked(event)  
+            self.textbox_ants_2.handle_event(event)  
             try:
                     self.colonies[1].num_ants = int(self.textbox_ants_2.text)
             except ValueError:
-                pass  # Ignore invalid input (non-integer values)
+                pass  # Ignores none integer values
 
-            self.textbox_ants_3.is_clicked(event)  # Activate/deactivate text box
-            self.textbox_ants_3.handle_event(event)  # Handle text input
+            # Handles textbox input to determine num of ants in colony 3
+            self.textbox_ants_3.is_clicked(event)  
+            self.textbox_ants_3.handle_event(event)  
             try:
                     self.colonies[2].num_ants = int(self.textbox_ants_3.text)
             except ValueError:
-                pass  # Ignore invalid input (non-integer values)
+                pass  # Ignores none integer values
 
-            self.textbox_ants_4.is_clicked(event)  # Activate/deactivate text box
-            self.textbox_ants_4.handle_event(event)  # Handle text input
+            # Handles textbox input to determine num of ants in colony 4
+            self.textbox_ants_4.is_clicked(event)  
+            self.textbox_ants_4.handle_event(event)  
             try:
                     self.colonies[3].num_ants = int(self.textbox_ants_4.text)
             except ValueError:
-                pass  # Ignore invalid input (non-integer values)
+                pass  # Ignores none integer values
 
-            self.textbox_fps.is_clicked(event)  # Activate/deactivate text box
-            self.textbox_fps.handle_event(event)  # Handle text input
+            # Handles textbox input to determine fps of simulation 
+            self.textbox_fps.is_clicked(event) 
+            self.textbox_fps.handle_event(event)  
             try:
                     self.settings.FPS = int(self.textbox_fps.text)
             except ValueError:
-                pass  # Ignore invalid input (non-integer values)
+                pass  # Ignores none integer values
 
-    
+
+    # Declares all the element of the GUI
+    def create_gui(self):
+        self.button_pause = Button("Play", (10, 750), (100, 50))
+        self.button_reset = Button("Reset", (10, 850), (100, 50))
+
+        self.button_food = Button("Food", (210, 750), (100, 50))
+        self.button_obstacle = Button("Obstacle", (410, 750), (100, 50))
+        self.button_reset_ants = Button("Reset Ants", (1150, 750), (100, 50))
+        self.textbox_cursor = TextBox((410, 850), (100, 40), 2, str(self.cursor_size))
+        self.textbox_fps = TextBox((750, 850), (100, 40), 3, str(Settings.FPS))
+
+        self.button_nest_1 = Button("Nest", (1300, 50), (50, 50))
+        self.textbox_ants_1 = TextBox((1300, 150), (50, 40), 4, str(self.colonies[0].num_ants))
+
+        self.button_nest_2 = Button("Nest", (1425, 50), (50, 50))
+        self.textbox_ants_2 = TextBox((1425, 150), (50, 40), 4, str(self.colonies[1].num_ants))
+
+        self.button_nest_3 = Button("Nest", (1550, 50), (50, 50))
+        self.textbox_ants_3 = TextBox((1550, 150), (50, 40), 4, str(self.colonies[2].num_ants))
+
+        self.button_nest_4 = Button("Nest", (1675, 50), (50, 50))
+        self.textbox_ants_4 = TextBox((1675, 150), (50, 40), 4, str(self.colonies[3].num_ants))
+
+    # Draws all of the elements of the GUI
     def draw_gui(self):
-        # Draw elements of GUI
 
             pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((1280, 0), (500, 920)))
             pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((0, 720), (1280, 200)))
@@ -227,36 +237,33 @@ class Simulation:
             self.screen.blit(self.font.render(f"Species:", True, (0, 0, 0)), (1675, 220))
 
 
-
-    
-
-
     def run(self):
 
-
+        # Main loop
         while self.running:
-            self.handle_event()
+            self.handle_event() # Handles user interactions
 
-            self.screen.fill("White")
+            self.screen.fill("White") # Sets background of screen 
 
             if not self.paused:
                 for col in self.colonies:
-                    col.update_ants(self.grid)
-                self.grid.update_pheromones()
-                self.grid.diffuse_pheromones()
+                    col.update_ants(self.grid) # Updates ant movement, pheromone deposition etc
+                self.grid.update_pheromones() # Decays pheromones
+                self.grid.diffuse_pheromones() # Diffuses pheromones
             
 
-            self.grid.draw_grid(self.screen)
+            self.grid.draw_grid(self.screen) # Draws the updated grid to the screen
 
+            # Draws each of the ants
             for col in self.colonies:
                 self.grid.draw_ants(self.screen, col.ants, col.species)
         
 
-            self.draw_gui()
+            self.draw_gui() # Draws the GUI
 
             
             pygame.display.flip() 
-            self.clock.tick(self.settings.FPS)  # sets FPS limit
+            self.clock.tick(self.settings.FPS)  # sets the FPS limit
         pygame.quit()
 
 

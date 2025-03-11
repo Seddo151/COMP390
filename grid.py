@@ -63,12 +63,12 @@ class Grid:
         self.pheromone_home[y, x] = np.clip(self.pheromone_home[y, x] + amount, 0, 255)
 
 
-    def reset_grid(self):
+    def clear_grid(self):
         self.food.fill(0)
         self.obstacle.fill(False)
         self.nest.fill(False)
 
-    def reset_pheromones(self):
+    def clear_pheromones(self):
         self.pheromone_food.fill(0)
         self.pheromone_home.fill(0)
                 
@@ -139,8 +139,6 @@ class Grid:
                         self.set_food(x, y, -food_num)
                     if  type == 'obstacle':
                         self.set_obstacle(x, y, False)
-                    if type == 'nest':
-                        self.set_nest(x, y, False)
 
 
     def draw_grid(self, screen):

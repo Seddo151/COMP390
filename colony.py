@@ -5,7 +5,7 @@ class Colony:
     def __init__(self, species = (0,0,0)):
         self.nest_location =  None
         self.species = species
-        self.num_ants = 500
+        self.num_ants = Settings.DEFAULT_NUM_ANTS
         self.ants = []
         self.food_collected = 0
 
