@@ -5,19 +5,22 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
 BLUE = (70, 130, 180)
-LIGHT_BLUE = (70, 130, 180)  
+LIGHT_BLUE = (173,216,230)
+DARK_BLUE = 	(70,130,180)
 TEXT_COLOR = BLACK
 
 class Button:
     def __init__(self, text, pos, size):
         self.rect = pygame.Rect(pos, size)
-        self.color = BLUE
+        self.colour = LIGHT_BLUE
         self.font = pygame.font.Font(None, 24)
         self.text = text
+        self.active = False
         self.text_surface = self.font.render(text, True, TEXT_COLOR)
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+        self.colour = DARK_BLUE if self.active else LIGHT_BLUE
+        pygame.draw.rect(screen, self.colour, self.rect)
         text_rect = self.text_surface.get_rect(center=self.rect.center)
         screen.blit(self.text_surface, text_rect)
 

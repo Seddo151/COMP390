@@ -7,8 +7,8 @@ class Settings:
     SIM_HEIGHT = 720 # Height of the simulation space
     SIM_WIDTH = 1280 # Width of the simulation space
     CELL_SIZE = 4 # Size of a cell in the grid
-    GRID_ROWS = (SIM_HEIGHT // CELL_SIZE) -1 # Num of rows in the grid
-    GRID_COLUMNS = (SIM_WIDTH // CELL_SIZE) - 1 # Num of columns in the grid
+    GRID_ROWS = (SIM_HEIGHT // CELL_SIZE) # Num of rows in the grid
+    GRID_COLUMNS = (SIM_WIDTH // CELL_SIZE) # Num of columns in the grid
 
     DEFAULT_NUM_ANTS = 500 # Default number of ants in a colony
     ANT_MEMORY_SIZE = 40 # Amount of the last visited cells remembered by the ant

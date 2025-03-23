@@ -1,8 +1,10 @@
 from ant import Ant
 from settings import Settings
 
+
+
 class Colony:
-    def __init__(self, species = (0,0,0)):
+    def __init__(self, species):
         self.nest_location =  None
         self.species = species
         self.num_ants = Settings.DEFAULT_NUM_ANTS
@@ -13,7 +15,7 @@ class Colony:
     def reset_ants(self, grid):
         if self.nest_location:
             if  0 <= self.nest_location[0] < grid.columns and 0 <= self.nest_location[1] < grid.rows:
-                self.ants = [Ant(*self.nest_location, self.nest_location) for _ in range(self.num_ants)]
+                self.ants = [Ant(*self.nest_location, self.nest_location, self.species) for _ in range(self.num_ants)]
         else:
             self.ants = []
 

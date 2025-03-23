@@ -5,6 +5,22 @@ from grid import Grid
 from gui import Button, TextBox
 from colony import Colony
 
+
+class Species:
+    def __init__(self, name, colour, movement, directionality):
+        self.name = name
+        self.colour = colour
+        self.movement = movement
+        self.directionality = directionality
+
+SPECIES = [
+    Species("Garden Ant", (0,0,0), (0.15, 0.9, 0.1), 5.0),
+    Species("Crazy Ant", (0,0,0), (0.25, 0.8, 0.2), 4.0),
+    Species("Argentine Ant", (0,0,0), (0.1, 0.95, 0.05), 6.0),
+    Species("Pharaoh Ant", (0,0,0), (0.15, 0.9, 0.1), 10.0)
+]
+
+
 class Simulation:
     def __init__(self):
 
@@ -20,9 +36,11 @@ class Simulation:
         self.mouse1_dragging = False # Flag for if left mouse button is pressed and mouse is moved
         self.mouse3_dragging = False # Flag for if right mouse button is pressed and mouse is moved
 
-        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))] # Initialised the colonys
+        self.species = [SPECIES[0], SPECIES[1], SPECIES[2], SPECIES[3]]
+        self.colonies = (Colony(self.species[0]), Colony(self.species[1]), Colony(self.species[2]), Colony(self.species[3])) # Initialised the colonys
+        
         self.selected_nest_index = 0 # Which nest is being moved in simulation area
-        self.grid = Grid() # Initilased the grid
+        self.grid = Grid() # Creates the grid
 
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24) 
@@ -35,7 +53,7 @@ class Simulation:
     def reset_simulation(self):
         self.grid.clear_grid() # Clears the grid
         self.reset_ants() # Resets the ants
-        self.colonies = [Colony((0,0,0)), Colony((255,0,0)), Colony((0,0,0)), Colony((255,0,0))] # Re-initalises the colonies
+        self.colonies = (Colony(self.species[0]), Colony(self.species[1]), Colony(self.species[2]), Colony(self.species[3])) # Re-initalises the colonies
 
     # Resets the ants and pheromones in the simulation area
     def reset_ants(self):
@@ -107,8 +125,14 @@ class Simulation:
             if self.button_nest_4.is_clicked(event):
                 self.modify_state = 'nest'
                 self.selected_nest_index = 3
-            
-            # Handles textbox input to determine size of modifing area
+
+
+            for i, buttons in enumerate(self.species_button_groups):
+                for j, button in enumerate(buttons):
+                    if button.is_clicked(event):
+                        self.species[i] = SPECIES[j]
+
+            # Handles textbox input to determine size of modifying area
             self.textbox_cursor.is_clicked(event)
             self.textbox_cursor.handle_event(event)
             try:
@@ -170,19 +194,54 @@ class Simulation:
 
         self.button_nest_1 = Button("Nest", (1300, 50), (50, 50))
         self.textbox_ants_1 = TextBox((1300, 150), (50, 40), 4, str(self.colonies[0].num_ants))
+        self.buttons_species_1 = [Button("Garden Ant", (1290, 250), (110, 50)),
+                                Button("Crazy Ant", (1290, 330), (110, 50)),
+                                Button("Argentine Ant", (1290, 410), (110, 50)),
+                                Button("Pharaoh Ant", (1290, 490), (110, 50))]
 
         self.button_nest_2 = Button("Nest", (1425, 50), (50, 50))
         self.textbox_ants_2 = TextBox((1425, 150), (50, 40), 4, str(self.colonies[1].num_ants))
+        self.buttons_species_2 = [Button("Garden Ant", (1415, 250), (110, 50)),
+                                Button("Crazy Ant", (1415, 330), (110, 50)),
+                                Button("Argentine Ant", (1415, 410), (110, 50)),
+                                Button("Pharaoh Ant", (1415, 490), (110, 50))]
 
         self.button_nest_3 = Button("Nest", (1550, 50), (50, 50))
         self.textbox_ants_3 = TextBox((1550, 150), (50, 40), 4, str(self.colonies[2].num_ants))
+        self.buttons_species_3 = [Button("Garden Ant", (1540, 250), (110, 50)),
+                                Button("Crazy Ant", (1540, 330), (110, 50)),
+                                Button("Argentine Ant", (1540, 410), (110, 50)),
+                                Button("Pharaoh Ant", (1540, 490), (110, 50))]
 
         self.button_nest_4 = Button("Nest", (1675, 50), (50, 50))
         self.textbox_ants_4 = TextBox((1675, 150), (50, 40), 4, str(self.colonies[3].num_ants))
+        self.buttons_species_4 = [Button("Garden Ant", (1665, 250), (110, 50)),
+                                Button("Crazy Ant", (1665, 330), (110, 50)),
+                                Button("Argentine Ant", (1665, 410), (110, 50)),
+                                Button("Pharaoh Ant", (1665, 490), (110, 50))]
+
+        self.species_button_groups = [
+                self.buttons_species_1,
+                self.buttons_species_2,
+                self.buttons_species_3,
+                self.buttons_species_4,
+            ]
 
     # Draws all of the elements of the GUI
     def draw_gui(self):
+            
+            self.button_food.active = (self.modify_state == 'food')
+            self.button_obstacle.active = (self.modify_state == 'obstacle')
+            self.button_nest_1.active = True if (self.modify_state == 'nest' and self.selected_nest_index == 0) else False
+            self.button_nest_2.active = True if (self.modify_state == 'nest' and self.selected_nest_index == 1) else False
+            self.button_nest_3.active = True if (self.modify_state == 'nest' and self.selected_nest_index == 2) else False
+            self.button_nest_4.active = True if (self.modify_state == 'nest' and self.selected_nest_index == 3) else False
 
+            for i, buttons in enumerate(self.species_button_groups):
+                for j, button in enumerate(buttons):
+                    button.active = self.species[i] == SPECIES[j]
+                    
+        
             pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((1280, 0), (500, 920)))
             pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((0, 720), (1280, 200)))
 
@@ -195,18 +254,34 @@ class Simulation:
             self.button_nest_1.draw(self.screen)
             self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1300, 130))
             self.textbox_ants_1.draw(self.screen)
+            self.buttons_species_1[0].draw(self.screen)
+            self.buttons_species_1[1].draw(self.screen)
+            self.buttons_species_1[2].draw(self.screen)
+            self.buttons_species_1[3].draw(self.screen)
 
             self.button_nest_2.draw(self.screen)
             self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1425, 130))
             self.textbox_ants_2.draw(self.screen)
+            self.buttons_species_2[0].draw(self.screen)
+            self.buttons_species_2[1].draw(self.screen)
+            self.buttons_species_2[2].draw(self.screen)
+            self.buttons_species_2[3].draw(self.screen)
 
             self.button_nest_3.draw(self.screen)
             self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1550, 130))
             self.textbox_ants_3.draw(self.screen)
+            self.buttons_species_3[0].draw(self.screen)
+            self.buttons_species_3[1].draw(self.screen)
+            self.buttons_species_3[2].draw(self.screen)
+            self.buttons_species_3[3].draw(self.screen)
 
             self.button_nest_4.draw(self.screen)
             self.screen.blit(self.font.render(f"ants num:", True, (0, 0, 0)), (1675, 130))
             self.textbox_ants_4.draw(self.screen)
+            self.buttons_species_4[0].draw(self.screen)
+            self.buttons_species_4[1].draw(self.screen)
+            self.buttons_species_4[2].draw(self.screen)
+            self.buttons_species_4[3].draw(self.screen)
             
             self.screen.blit(self.font.render(f"cursor size:", True, (0, 0, 0)), (310, 860))
             self.textbox_cursor.draw(self.screen)
@@ -214,17 +289,17 @@ class Simulation:
             self.screen.blit(self.font.render(f"FPS:", True, (0, 0, 0)), (700, 860))
             self.textbox_fps.draw(self.screen)
 
-            text_food = self.font.render(f"food collected: {self.colonies[0].food_collected}" , True, (0, 0, 0))
-            self.screen.blit(text_food, (1300, 600))
+            text_food = self.font.render(f"Colony1 food: {self.colonies[0].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 575))
 
-            text_food = self.font.render(f"food collected: {self.colonies[1].food_collected}" , True, (0, 0, 0))
-            self.screen.blit(text_food, (1300, 700))
+            text_food = self.font.render(f"Colony2 food: {self.colonies[1].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 610))
 
-            text_food = self.font.render(f"food collected: {self.colonies[2].food_collected}" , True, (0, 0, 0))
-            self.screen.blit(text_food, (1300, 800))
+            text_food = self.font.render(f"Colony3 food: {self.colonies[2].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 645))
 
-            text_food = self.font.render(f"food collected: {self.colonies[3].food_collected}" , True, (0, 0, 0))
-            self.screen.blit(text_food, (1300, 900))
+            text_food = self.font.render(f"Colony4 food: {self.colonies[3].food_collected}" , True, (0, 0, 0))
+            self.screen.blit(text_food, (1300, 680))
 
             self.screen.blit(self.font.render(f"Colony 1", True, (0, 0, 0)), (1300, 20))
             self.screen.blit(self.font.render(f"Colony 2", True, (0, 0, 0)), (1425, 20))
@@ -256,7 +331,7 @@ class Simulation:
 
             # Draws each of the ants
             for col in self.colonies:
-                self.grid.draw_ants(self.screen, col.ants, col.species)
+                self.grid.draw_ants(self.screen, col.ants, col.species.colour)
         
 
             self.draw_gui() # Draws the GUI

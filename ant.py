@@ -2,18 +2,24 @@ import random
 from settings import Settings
 
 class Ant:
-    def __init__(self, x, y, nest_location):
+    def __init__(self, x, y, nest_location, species):
         self.nest_location = nest_location
         self.x = x
         self.y = y
         self.has_food = False  # Possible states: "foraging" or "returning"
         self.visited_positions = []  # List of recently visited positions
         self.last_direction = (0, 0) # Last Direction
-        # self.returning_timer = 0  # Timer for returning state
+        self.returning_timer = 0  # Timer for returning state
         self.food_collected_count = 0
-        self.memory_size = Settings.ANT_MEMORY_SIZE
 
-        self.directions = [
+        
+        self.memory_size = Settings.ANT_MEMORY_SIZE
+        self.species_name = species.name
+        self.colour = species.colour
+        self.rand_nums = species.movement # change chances of actions in follow_pheromone func
+        self.directional_allignment = species.directionality # changes how much an ant knows about direction of nest
+
+        self.directions = ( # all possible directions
             (0,0), # None
             (0, 1), # Up
             (1, 0), # Right
@@ -23,9 +29,8 @@ class Ant:
             (1, -1), # Up-left
             (-1, 1), # Down-right
             (-1, -1) # Down-left
-        ] 
+        ) 
        
-
 
     def move(self, grid):
 
@@ -57,13 +62,13 @@ class Ant:
         # Introduce randomness to break loops
         if possible_directions == []:
             dx, dy = (0,0)
-        elif best_direction and best_score  > 0 and random.random() > 0.15: # % chance to move randomly
-            if best_direction2 and best_score2  > 0 and random.random() > 0.9: #chance to take 2nd best direction
+        elif best_direction and best_score  > 0 and random.random() > self.rand_nums[0]: # chance to move randomly
+            if best_direction2 and best_score2  > 0 and random.random() > self.rand_nums[1]: #chance to take 2nd best direction
                 dx, dy = best_direction2
             else:
                 dx, dy = best_direction
         else:
-            if self.last_direction in possible_directions and random.random() > 0.1:  # % chance to continue
+            if self.last_direction in possible_directions and random.random() > self.rand_nums[2]:  # chance to continue
                 dx, dy = self.last_direction
             else:
                 dx, dy = random.choice(possible_directions)  # Explore randomly
@@ -106,7 +111,7 @@ class Ant:
             pheromone_level = cell["pheromone_food"] if not self.has_food else cell["pheromone_home"]
             # Combine pheromone level with nest alignment for returning ants only
             direction_alignment = (dx * nest_dx + dy * nest_dy) if self.has_food else 0
-            score = pheromone_level + (2.0 * direction_alignment) - visited_penalty
+            score = pheromone_level + (5.0 * direction_alignment) - visited_penalty
 
             if cell["food"]  and not self.has_food:
                 score = 256

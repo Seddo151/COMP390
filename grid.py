@@ -143,49 +143,35 @@ class Grid:
 
     def draw_grid(self, screen):
         cell_size = Settings.CELL_SIZE
-        # Create an empty color grid: rows x columns x 3 (for RGB)
-        grid_colors = np.empty((self.rows, self.columns, 3), dtype=np.uint8)
+        grid_colors = np.full((self.rows, self.columns, 3), WHITE, dtype=np.uint8)
         
-        # Set default color (white)
-        grid_colors[:] = WHITE
-
-        # Set obstacles: where self.obstacle is True, color is DIM_GREY
+        # Base layers
         grid_colors[self.obstacle] = DIM_GREY
-
-        # Set nests (only where not an obstacle)
-        mask_nest = self.nest & ~self.obstacle
-        grid_colors[mask_nest] = BROWN
-
-        # Set food: where food > 0 and not already set as obstacle or nest
-        mask_food = (self.food > 0) & ~(self.obstacle | self.nest)
-        grid_colors[mask_food] = GREEN
-
-        # Set pheromone_food: where pheromone_food > 0 and cell isn’t already an obstacle, nest, or food
-        mask_pheromone_food = (self.pheromone_food > 0) & ~(self.obstacle | self.nest | (self.food > 0))
-        if np.any(mask_pheromone_food):
-            # Compute intensity: higher pheromone means lower intensity offset
-            intensity = np.clip(255 - self.pheromone_food[mask_pheromone_food], 0, 255).astype(np.uint8)
-            # Create a color array: (255, intensity, 255)
-            grid_colors[mask_pheromone_food] = np.stack((np.full_like(intensity, 255),
-                                                        intensity,
-                                                        np.full_like(intensity, 255)), axis=-1)
-            
-        # Set pheromone_home: where pheromone_home > 0 and not already set by obstacles, nests, food, or food pheromone
-        mask_pheromone_home = (self.pheromone_home > 0) & ~(self.obstacle | self.nest | (self.food > 0) | (self.pheromone_food > 0))
-        if np.any(mask_pheromone_home):
-            intensity = np.clip(255 - self.pheromone_home[mask_pheromone_home], 0, 255).astype(np.uint8)
-            grid_colors[mask_pheromone_home] = np.stack((intensity,
-                                                        np.full_like(intensity, 255),
-                                                        np.full_like(intensity, 255)), axis=-1)
+        grid_colors[self.nest & ~self.obstacle] = BROWN
+        grid_colors[(self.food > 0) & ~self.obstacle & ~self.nest] = GREEN
         
-        # Create a surface from the grid colors.
-        # Note: pygame.surfarray.make_surface expects the array shape as (width, height, 3)
+        # Pheromone handling
+        base_mask = ~(self.obstacle | self.nest | (self.food > 0))
+        pheromones = [
+            (self.pheromone_food, (255, 'intensity', 255)),  # Pink gradient
+            (self.pheromone_home, ('intensity', 255, 255))   # Cyan gradient
+        ]
+        
+        for pheromone, color_template in pheromones:
+            mask = (pheromone > 0) & base_mask
+            if not np.any(mask):
+                continue
+            intensity = np.clip(255 - pheromone[mask], 0, 255).astype(np.uint8)
+            channels = []
+            for c in color_template:
+                channels.append(intensity if c == 'intensity' else np.full_like(intensity, c))
+            grid_colors[mask] = np.stack(channels, axis=-1)
+            base_mask &= ~mask  # Prevent overlap
+        
         surface = pygame.surfarray.make_surface(np.transpose(grid_colors, (1, 0, 2)))
-        
-        # Scale the surface up to the full pixel dimensions of the grid.
-        scaled_surface = pygame.transform.scale(surface, (self.columns * cell_size, self.rows * cell_size))
-        
-        # Blit the scaled surface onto the screen.
+        scaled_surface = pygame.transform.scale(
+            surface, (self.columns * cell_size, self.rows * cell_size)
+        )
         screen.blit(scaled_surface, (0, 0))
 
     def draw_ants(self, screen, ants, colour):
