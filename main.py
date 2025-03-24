@@ -6,19 +6,14 @@ from gui import Button, TextBox
 from colony import Colony
 
 
-class Species:
-    def __init__(self, name, colour, movement, directionality):
-        self.name = name
-        self.colour = colour
-        self.movement = movement
-        self.directionality = directionality
+GARDEN_ANT = ((0,0,0), (0.15, 0.9, 0.1), 5.0)
+CRAZY_ANT = ((255,0,0), (0.25, 0.8, 0.2), 4.0)
+ARGENTINE_ANT = ((0,255,0), (0.1, 0.95, 0.05), 6.0)
+PHARAOH_ANT = ((0,0,255), (0.15, 0.9, 0.1), 10.0)
 
-SPECIES = [
-    Species("Garden Ant", (0,0,0), (0.15, 0.9, 0.1), 5.0),
-    Species("Crazy Ant", (0,0,0), (0.25, 0.8, 0.2), 4.0),
-    Species("Argentine Ant", (0,0,0), (0.1, 0.95, 0.05), 6.0),
-    Species("Pharaoh Ant", (0,0,0), (0.15, 0.9, 0.1), 10.0)
-]
+SPECIES = [GARDEN_ANT, CRAZY_ANT, ARGENTINE_ANT, PHARAOH_ANT]
+
+
 
 
 class Simulation:
@@ -36,8 +31,7 @@ class Simulation:
         self.mouse1_dragging = False # Flag for if left mouse button is pressed and mouse is moved
         self.mouse3_dragging = False # Flag for if right mouse button is pressed and mouse is moved
 
-        self.species = [SPECIES[0], SPECIES[1], SPECIES[2], SPECIES[3]]
-        self.colonies = (Colony(self.species[0]), Colony(self.species[1]), Colony(self.species[2]), Colony(self.species[3])) # Initialised the colonys
+        self.colonies = (Colony(GARDEN_ANT), Colony(GARDEN_ANT), Colony(GARDEN_ANT), Colony(GARDEN_ANT)) # Initialised the colonys
         
         self.selected_nest_index = 0 # Which nest is being moved in simulation area
         self.grid = Grid() # Creates the grid
@@ -130,7 +124,7 @@ class Simulation:
             for i, buttons in enumerate(self.species_button_groups):
                 for j, button in enumerate(buttons):
                     if button.is_clicked(event):
-                        self.species[i] = SPECIES[j]
+                        self.colonies[i].species = SPECIES[j]
 
             # Handles textbox input to determine size of modifying area
             self.textbox_cursor.is_clicked(event)
@@ -190,7 +184,7 @@ class Simulation:
         self.button_obstacle = Button("Obstacle", (410, 750), (100, 50))
         self.button_reset_ants = Button("Reset Ants", (1150, 750), (100, 50))
         self.textbox_cursor = TextBox((410, 850), (100, 40), 2, str(self.cursor_size))
-        self.textbox_fps = TextBox((750, 850), (100, 40), 3, str(Settings.FPS))
+        self.textbox_fps = TextBox((750, 850), (100, 40), 3, str(self.settings.FPS))
 
         self.button_nest_1 = Button("Nest", (1300, 50), (50, 50))
         self.textbox_ants_1 = TextBox((1300, 150), (50, 40), 4, str(self.colonies[0].num_ants))
@@ -239,7 +233,7 @@ class Simulation:
 
             for i, buttons in enumerate(self.species_button_groups):
                 for j, button in enumerate(buttons):
-                    button.active = self.species[i] == SPECIES[j]
+                    button.active = self.colonies[i].species == SPECIES[j]
                     
         
             pygame.draw.rect(self.screen, (200, 200, 200) , pygame.Rect((1280, 0), (500, 920)))
@@ -331,7 +325,7 @@ class Simulation:
 
             # Draws each of the ants
             for col in self.colonies:
-                self.grid.draw_ants(self.screen, col.ants, col.species.colour)
+                self.grid.draw_ants(self.screen, col.ants, col.species[0])
         
 
             self.draw_gui() # Draws the GUI
@@ -344,5 +338,5 @@ class Simulation:
 
 if __name__ == "__main__":
     sim = Simulation()
-    sim.run()
-    # cProfile.run('sim.run()', sort='cumulative')
+    # sim.run()
+    cProfile.run('sim.run()', sort='cumulative')

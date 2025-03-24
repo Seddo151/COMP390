@@ -35,6 +35,9 @@ class Colony:
         grid_x = x // cell_size
         grid_y = y // cell_size
 
+        if not (0 <= grid_x < grid.columns and 0 <= grid_y < grid.rows):
+            return  # Ignore the event if out-of-bounds
+
         if self.nest_location:
             # Remove the old nest
             old_x, old_y = self.nest_location

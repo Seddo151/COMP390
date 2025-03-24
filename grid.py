@@ -34,7 +34,7 @@ class Grid:
         
         self.rows = Settings.GRID_ROWS
         self.columns = Settings.GRID_COLUMNS
-
+        
         self.food = np.zeros((self.rows, self.columns), dtype=int)
         self.nest = np.zeros((self.rows, self.columns), dtype=bool)
         self.obstacle = np.zeros((self.rows, self.columns), dtype=bool)
