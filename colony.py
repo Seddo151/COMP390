@@ -42,13 +42,13 @@ class Colony:
             # Remove the old nest
             old_x, old_y = self.nest_location
             grid.set_nest(old_x, old_y, False)
-            grid.set_pheromone(old_x, old_y, 'clear')
+            grid.clear_pheromone_cell(old_x, old_y,)
 
 
         # Place the new nest
         self.nest_location = (grid_x, grid_y)
         grid.set_nest(grid_x, grid_y, True)
-        grid.set_pheromone(grid_x, grid_y, 'home', 255)
+        grid.update_home_pheromone(grid_x, grid_y, 255)
         # Reset ants to the new nest location
         self.reset_ants(grid)
 
@@ -57,4 +57,4 @@ class Colony:
         if self.nest_location:
             nest_x, nest_y = self.nest_location
             # Adjust the deposit amount (e.g., 10) as needed.
-            grid.set_pheromone(nest_x, nest_y, 'home', 50)
+            grid.update_home_pheromone(nest_x, nest_y, 50)

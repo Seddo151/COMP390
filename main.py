@@ -47,7 +47,7 @@ class Simulation:
     def reset_simulation(self):
         self.grid.clear_grid() # Clears the grid
         self.reset_ants() # Resets the ants
-        self.colonies = (Colony(self.species[0]), Colony(self.species[1]), Colony(self.species[2]), Colony(self.species[3])) # Re-initalises the colonies
+        self.colonies = (Colony(self.colonies[0].species), Colony(self.colonies[1].species), Colony(self.colonies[2].species), Colony(self.colonies[3].species)) # Re-initalises the colonies
 
     # Resets the ants and pheromones in the simulation area
     def reset_ants(self):
@@ -318,7 +318,6 @@ class Simulation:
                 for col in self.colonies:
                     col.update_ants(self.grid) # Updates ant movement, pheromone deposition etc
                 self.grid.update_pheromones() # Decays pheromones
-                self.grid.diffuse_pheromones() # Diffuses pheromones
             
 
             self.grid.draw_grid(self.screen) # Draws the updated grid to the screen
@@ -338,5 +337,5 @@ class Simulation:
 
 if __name__ == "__main__":
     sim = Simulation()
-    # sim.run()
-    cProfile.run('sim.run()', sort='cumulative')
+    sim.run()
+    # cProfile.run('sim.run()', sort='cumulative')

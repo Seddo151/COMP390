@@ -1,5 +1,6 @@
 import random
 from settings import Settings
+from collections import deque
 
 class Ant:
     def __init__(self, x, y, nest_location, species):
@@ -7,13 +8,13 @@ class Ant:
         self.x = x
         self.y = y
         self.has_food = False  # Possible states: "foraging" or "returning"
-        self.visited_positions = []  # List of recently visited positions
         self.last_direction = (0, 0) # Last Direction
         self.returning_timer = 0  # Timer for returning state
         self.food_collected_count = 0
 
-        
         self.memory_size = Settings.ANT_MEMORY_SIZE
+        self.visited_positions = []  # List of recently visited positions
+
         self.colour = species[0]
         self.rand_nums = species[1] # change chances of actions in follow_pheromone func
         self.directional_allignment = species[2] # changes how much an ant knows about direction of nest
@@ -29,10 +30,8 @@ class Ant:
             (-1, 1), # Down-right
             (-1, -1) # Down-left
         ) 
-       
-
+    
     def move(self, grid):
-
         # Increment timer if in the returning state
         if self.has_food == True:
             self.returning_timer += 1
@@ -52,41 +51,42 @@ class Ant:
         current_position = (self.x, self.y)
         self.visited_positions.append(current_position)
         if len(self.visited_positions) > self.memory_size:  # Limit memory to 20 positions
-            self.visited_positions.pop(0)
-
+                self.visited_positions.pop(0)
 
     def follow_pheromones(self, grid):
-       
         best_score, best_direction, possible_directions, best_score2, best_direction2 = self.find_best(grid)
 
         rand = random.random
+        r1, r2, r3 = rand(), rand(), rand()
         # Introduce randomness to break loops
         if possible_directions == []:
             dx, dy = (0,0)
-        elif best_direction and best_score  > 0 and rand() > self.rand_nums[0]: # chance to move randomly
-            if best_direction2 and best_score2  > 0 and rand() > self.rand_nums[1]: #chance to take 2nd best direction
+        elif best_direction and best_score  > 0 and r1 > self.rand_nums[0]: # chance to move randomly
+            if best_direction2 and best_score2  > 0 and r2 > self.rand_nums[1]: #chance to take 2nd best direction
                 dx, dy = best_direction2
             else:
                 dx, dy = best_direction
         else:
-            if self.last_direction in possible_directions and rand() > self.rand_nums[2]:  # chance to continue
+            if self.last_direction in possible_directions and r3 > self.rand_nums[2]:  # chance to continue
                 dx, dy = self.last_direction
             else:
                 dx, dy = random.choice(possible_directions)  # Explore randomly
-
 
         self.last_direction = (dx, dy)
         self.x += dx
         self.y += dy
 
-
     def find_best(self, grid):
-        
         directions = self.directions
         current_x, current_y = self.x, self.y
-        visited = self.visited_positions
-        columns, rows = grid.columns, grid.rows
         has_food = self.has_food
+
+        columns, rows = grid.columns, grid.rows
+        obstacle = grid.obstacle
+        pheromone_home = grid.pheromone_home
+        pheromone_food = grid.pheromone_food
+        grid_food = grid.food
+        grid_nest = grid.nest
 
         nest_dx, nest_dy = (0, 0)
         if has_food:
@@ -100,28 +100,24 @@ class Ant:
 
         for dx, dy in directions:
             nx, ny = current_x + dx, current_y + dy
-            
             # Skip out-of-bounds directions
             if not (0 <= nx < columns and 0 <= ny < rows):
                 continue
-
-            
-            
             # skips directions blocked by obstacles
-            if grid.obstacle[ny, nx]:
+            if obstacle[ny][nx]:
                 continue
 
             possible_directions.append((dx, dy))
 
-            visited_penalty = 100 if (nx, ny) in visited else 0
+            visited_penalty = 100 if (nx, ny) in self.visited_positions else 0
             
-            pheromone_level = grid.pheromone_home[ny, nx] if has_food else grid.pheromone_food[ny, nx]
+            pheromone_level = pheromone_home[ny][nx] if has_food else pheromone_food[ny][nx]
             # Combine pheromone level with nest alignment for returning ants only
             direction_alignment = (dx * nest_dx + dy * nest_dy) if has_food else 0
             score = pheromone_level + (5.0 * direction_alignment) - visited_penalty
 
-            cell_food = grid.food[ny, nx]
-            cell_nest = grid.nest[ny, nx]
+            cell_food = grid_food[ny][nx]
+            cell_nest = grid_nest[ny][nx]
 
 
             if cell_food > 0 and not has_food:
@@ -141,23 +137,23 @@ class Ant:
     def deposit_pheromone(self,grid):
         if self.last_direction != (0,0):
             if self.has_food == True:
-                grid.set_pheromone(self.x, self.y, 'food', 4)
+                grid.deposit_food_pheromone(self.x, self.y, 4)
             else:
-                grid.set_pheromone(self.x, self.y, 'home', 4)
+                grid.deposit_home_pheromone(self.x, self.y, 4)
 
     
     def change_state(self,grid):
-        cell = grid.get_cell(self.x, self.y)
-        if cell is None:
-            # Option 1: Clamp the coordinates (or log an error)
-            return
         
-        if cell["food"] > 0 and self.has_food == False:
+        food = grid.food[self.y][self.x]
+        nest = grid.nest[self.y][self.x]
+
+        if food > 0 and self.has_food == False:
             self.has_food = True
             self.visited_positions = [] # Reset visited positions
             grid.set_food(self.x, self.y, -1)
 
-        elif cell["nest"] == True and self.has_food == True:
+        
+        elif nest == True and self.has_food == True:
             self.has_food = False
             self.visited_positions = [] # Reset visited positions
             self.food_collected_count += 1

@@ -12,8 +12,8 @@ class Settings:
 
     DEFAULT_NUM_ANTS = 500 # Default number of ants in a colony
     ANT_MEMORY_SIZE = 40 # Amount of the last visited cells remembered by the ant
-    DECAY_RATE_FOOD = 0.01 # Decay rate of the food pheromones
-    DECAY_RATE_HOME = 0.01 # Decay rate of the home pheromones
+    DECAY_RATE_FOOD = 0.005 # Decay rate of the food pheromones
+    DECAY_RATE_HOME = 0.005 # Decay rate of the home pheromones
 
     FOOD_NUM = 100 # Value of the food placed in a cell
 
