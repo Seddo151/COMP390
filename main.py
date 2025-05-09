@@ -2,19 +2,18 @@ import pygame
 import cProfile
 from settings import Settings
 from grid import Grid
-from gui import Button, TextBox
+from gui import Button, TextBox 
 from colony import Colony
 
-
-GARDEN_ANT = ((0,0,0), (0.15, 0.9, 0.1), 5.0)
-CRAZY_ANT = ((255,0,0), (0.25, 0.8, 0.2), 4.0)
-ARGENTINE_ANT = ((0,255,0), (0.1, 0.95, 0.05), 6.0)
-PHARAOH_ANT = ((0,0,255), (0.15, 0.9, 0.1), 10.0)
+GARDEN_ANT = ((0,0,0), # colour
+               (0.1, 0.9, 0.1), # random vals
+                 5.0, # directionality
+                   False) # deposition depenedent on food size
+CRAZY_ANT = ((255,0,0), (0.4, 0.9, 0.1), 4.0, False)
+ARGENTINE_ANT = ((200,100,0), (0.15, 0.9, 0.1), 5.0, True)
+PHARAOH_ANT = ((0,0,255), (0.15, 0.9, 0.1), 10.0, False)
 
 SPECIES = [GARDEN_ANT, CRAZY_ANT, ARGENTINE_ANT, PHARAOH_ANT]
-
-
-
 
 class Simulation:
     def __init__(self):
@@ -25,13 +24,16 @@ class Simulation:
         self.running = True
         self.paused = True
 
-        self.cursor_size = 1 # Size of what the user is modifying on the grid
+        self.cursor_size = 4 # Size of what the user is modifying on the grid
         self.modify_state = 'food' # What element the user is modifying on the grid
 
         self.mouse1_dragging = False # Flag for if left mouse button is pressed and mouse is moved
         self.mouse3_dragging = False # Flag for if right mouse button is pressed and mouse is moved
 
-        self.colonies = (Colony(GARDEN_ANT), Colony(GARDEN_ANT), Colony(GARDEN_ANT), Colony(GARDEN_ANT)) # Initialised the colonys
+        self.colonies = (Colony(GARDEN_ANT, 0),
+                         Colony(GARDEN_ANT, 1),
+                         Colony(GARDEN_ANT, 2),
+                         Colony(GARDEN_ANT, 3)) # Initialised the colonies
         
         self.selected_nest_index = 0 # Which nest is being moved in simulation area
         self.grid = Grid() # Creates the grid
@@ -47,7 +49,10 @@ class Simulation:
     def reset_simulation(self):
         self.grid.clear_grid() # Clears the grid
         self.reset_ants() # Resets the ants
-        self.colonies = (Colony(self.colonies[0].species), Colony(self.colonies[1].species), Colony(self.colonies[2].species), Colony(self.colonies[3].species)) # Re-initalises the colonies
+        self.colonies = (Colony(self.colonies[0].species, 0),
+                         Colony(self.colonies[1].species, 1),
+                         Colony(self.colonies[2].species, 2),
+                         Colony(self.colonies[3].species, 3)) # Re-initalises the colonies
 
     # Resets the ants and pheromones in the simulation area
     def reset_ants(self):
@@ -307,7 +312,6 @@ class Simulation:
 
 
     def run(self):
-
         # Main loop
         while self.running:
             self.handle_event() # Handles user interactions
@@ -317,8 +321,7 @@ class Simulation:
             if not self.paused:
                 for col in self.colonies:
                     col.update_ants(self.grid) # Updates ant movement, pheromone deposition etc
-                self.grid.update_pheromones() # Decays pheromones
-            
+                self.grid.decay_pheromones() # Decays pheromones
 
             self.grid.draw_grid(self.screen) # Draws the updated grid to the screen
 
@@ -326,16 +329,13 @@ class Simulation:
             for col in self.colonies:
                 self.grid.draw_ants(self.screen, col.ants, col.species[0])
         
-
             self.draw_gui() # Draws the GUI
 
-            
             pygame.display.flip() 
             self.clock.tick(self.settings.FPS)  # sets the FPS limit
         pygame.quit()
 
-
 if __name__ == "__main__":
     sim = Simulation()
     sim.run()
-    # cProfile.run('sim.run()', sort='cumulative')
+    #cProfile.run('sim.run()', sort='cumulative')

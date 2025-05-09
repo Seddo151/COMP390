@@ -1,15 +1,15 @@
 import random
 from settings import Settings
-from collections import deque
 
 class Ant:
-    def __init__(self, x, y, nest_location, species):
+    def __init__(self, x, y, nest_location, species, colony_id):
+        self.colony_id = colony_id
         self.nest_location = nest_location
         self.x = x
         self.y = y
         self.has_food = False  # Possible states: "foraging" or "returning"
         self.last_direction = (0, 0) # Last Direction
-        self.returning_timer = 0  # Timer for returning state
+        self.returning_timer = 0  # Timer for the returning state
         self.food_collected_count = 0
 
         self.memory_size = Settings.ANT_MEMORY_SIZE
@@ -17,7 +17,10 @@ class Ant:
 
         self.colour = species[0]
         self.rand_nums = species[1] # change chances of actions in follow_pheromone func
-        self.directional_allignment = species[2] # changes how much an ant knows about direction of nest
+        self.allignment_weight = species[2] # changes how much an ant knows about direction of nest
+        self.food_size_pheromone = species[3] # changes amount of pheromones deposited based on food sources size
+        self.food_found = 0
+        
 
         self.directions = ( # all possible directions
             (0,0), # None
@@ -38,19 +41,19 @@ class Ant:
         else:
             self.returning_timer = 0
 
-        if self.returning_timer > 600:  # Timeout returning limit 
+        if self.returning_timer > 800: 
             self.has_food = False
-            self.returning_timer = 0  # Reset the timer
+            self.returning_timer = 0  # Resets the timer
 
 
         self.follow_pheromones(grid)
         self.x = max(0, min(self.x, grid.columns - 1))
         self.y = max(0, min(self.y, grid.rows - 1))
 
-        # Update visited positions
+        # Updates visited positions
         current_position = (self.x, self.y)
         self.visited_positions.append(current_position)
-        if len(self.visited_positions) > self.memory_size:  # Limit memory to 20 positions
+        if len(self.visited_positions) > self.memory_size:  # Limits the memorys
                 self.visited_positions.pop(0)
 
     def follow_pheromones(self, grid):
@@ -80,6 +83,7 @@ class Ant:
         directions = self.directions
         current_x, current_y = self.x, self.y
         has_food = self.has_food
+        colony_id = self.colony_id
 
         columns, rows = grid.columns, grid.rows
         obstacle = grid.obstacle
@@ -87,6 +91,7 @@ class Ant:
         pheromone_food = grid.pheromone_food
         grid_food = grid.food
         grid_nest = grid.nest
+        
 
         nest_dx, nest_dy = (0, 0)
         if has_food:
@@ -104,26 +109,27 @@ class Ant:
             if not (0 <= nx < columns and 0 <= ny < rows):
                 continue
             # skips directions blocked by obstacles
-            if obstacle[ny][nx]:
+            if obstacle[ny, nx]:
                 continue
 
             possible_directions.append((dx, dy))
 
-            visited_penalty = 100 if (nx, ny) in self.visited_positions else 0
+            visited_penalty = 400 if (nx, ny) in self.visited_positions else 0
             
-            pheromone_level = pheromone_home[ny][nx] if has_food else pheromone_food[ny][nx]
+            pheromone_level = pheromone_home[colony_id][ny, nx] if has_food else pheromone_food[colony_id][ny, nx]
             # Combine pheromone level with nest alignment for returning ants only
             direction_alignment = (dx * nest_dx + dy * nest_dy) if has_food else 0
-            score = pheromone_level + (5.0 * direction_alignment) - visited_penalty
+            score = pheromone_level + (self.allignment_weight * direction_alignment) - visited_penalty
 
-            cell_food = grid_food[ny][nx]
-            cell_nest = grid_nest[ny][nx]
+            cell_food = grid_food[ny, nx]
+            cell_nest = grid_nest[ny, nx]
 
 
             if cell_food > 0 and not has_food:
-                score = 256
+                self.food_found = cell_food
+                score = 1000
             elif cell_nest and has_food:
-                score = 256
+                score = 1000
 
             if score > best_score:
                 best_score2 = best_score
@@ -137,15 +143,21 @@ class Ant:
     def deposit_pheromone(self,grid):
         if self.last_direction != (0,0):
             if self.has_food == True:
-                grid.deposit_food_pheromone(self.x, self.y, 4)
+                if self.food_size_pheromone:
+                    if self.food_found > 150: 
+                        grid.deposit_food_pheromone(self.x, self.y, 40, self.colony_id)
+                    else:
+                        grid.deposit_food_pheromone(self.x, self.y, 4, self.colony_id)
+                else:
+                    grid.deposit_food_pheromone(self.x, self.y, 6, self.colony_id)
             else:
-                grid.deposit_home_pheromone(self.x, self.y, 4)
+                grid.deposit_home_pheromone(self.x, self.y, 6, self.colony_id)
 
     
     def change_state(self,grid):
         
-        food = grid.food[self.y][self.x]
-        nest = grid.nest[self.y][self.x]
+        food = grid.food[self.y, self.x]
+        nest = grid.nest[self.y, self.x]
 
         if food > 0 and self.has_food == False:
             self.has_food = True
@@ -164,7 +176,7 @@ class Ant:
         nest_x, nest_y = self.nest_location
         dx = nest_x - self.x
         dy = nest_y - self.y
-        magnitude = max(1, (dx**2 + dy**2)**0.5)  # Avoid division by zero
+        magnitude = max(1, (dx**2 + dy**2)**0.5)  
         return dx / magnitude, dy / magnitude  # Unit vector toward the nest
 
    
